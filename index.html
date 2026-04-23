@@ -1,0 +1,2597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BCNY · AI Success Parameters Diagnostic</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.0/jspdf.plugin.autotable.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f172a; color: #f1f5f9; min-height: 100vh; }
+  .screen { display: none; min-height: 100vh; padding: 24px; align-items: center; justify-content: center; flex-direction: column; }
+  .screen.active { display: flex; }
+  .results-screen { display: none; min-height: 100vh; padding: 32px 20px; }
+  .results-screen.active { display: block; }
+  .inner { max-width: 720px; width: 100%; text-align: center; }
+  .badge { color: #94a3b8; font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; }
+  .logo { width: 42px; height: 42px; background: #1a56db; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  h1 { font-size: clamp(20px, 4vw, 32px); font-weight: 800; line-height: 1.25; margin-bottom: 12px; }
+  h1 span { color: #60a5fa; }
+  .sub { color: #94a3b8; font-size: 14px; line-height: 1.7; margin-bottom: 32px; }
+  .btn-group { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; }
+  .btn { border: none; border-radius: 12px; padding: 13px 28px; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .btn-primary { background: #1a56db; color: #fff; }
+  .btn-primary:hover { background: #1e40af; }
+  .btn-outline { background: transparent; color: #94a3b8; border: 1px solid #334155; }
+  .btn-outline:hover { background: #1e293b; color: #f1f5f9; }
+  .btn-sm { padding: 9px 20px; font-size: 13px; font-weight: 600; }
+  .qr-box { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+  .qr-box p { color: #94a3b8; font-size: 13px; margin-bottom: 14px; }
+  #qr-welcome, #qr-results { display: inline-block; padding: 8px; background: #fff; border-radius: 10px; }
+  .qr-url { color: #475569; font-size: 11px; margin-top: 10px; word-break: break-all; }
+  .note { color: #334155; font-size: 11px; }
+
+  .param-preview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 24px 0 28px; text-align: left; }
+  .param-preview-card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 12px 14px; }
+  .param-preview-num { color: #60a5fa; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 4px; }
+  .param-preview-title { font-size: 13px; font-weight: 600; color: #f1f5f9; line-height: 1.35; }
+
+  .vote-inner { max-width: 720px; width: 100%; text-align: left; }
+  .progress-bar { background: #1e293b; border-radius: 99px; height: 6px; margin-bottom: 28px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #1a56db, #60a5fa); border-radius: 99px; transition: width 0.4s ease; }
+  .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
+  .q-label { color: #60a5fa; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+  .q-count { color: #64748b; font-size: 13px; }
+
+  .param-card { background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 28px 28px; margin-bottom: 20px; }
+  .param-number-big { color: #60a5fa; font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+  .param-title-big { font-size: clamp(20px, 3vw, 26px); font-weight: 800; margin-bottom: 14px; line-height: 1.2; }
+  .param-def-label { color: #60a5fa; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+  .param-def-text { color: #cbd5e1; font-size: 14px; line-height: 1.7; }
+
+  .q-card { background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 26px 28px; margin-bottom: 16px; }
+  .q-num { color: #64748b; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+  .q-text { font-size: clamp(15px, 2vw, 18px); font-weight: 600; line-height: 1.45; color: #f1f5f9; margin-bottom: 16px; }
+  .opt-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .opt-btn {
+    background: #0f172a; border: 1px solid #334155; color: #cbd5e1;
+    border-radius: 12px; padding: 13px 16px; text-align: left;
+    font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; gap: 12px; font-family: inherit;
+  }
+  .opt-btn:hover { background: #1e293b; border-color: #60a5fa; color: #f1f5f9; }
+  .opt-btn.selected { background: rgba(26, 86, 219, 0.18); border-color: #60a5fa; color: #f1f5f9; }
+  .opt-level { color: #60a5fa; font-size: 11px; font-weight: 700; letter-spacing: 1px; min-width: 56px; }
+  .opt-btn.selected .opt-level { color: #93c5fd; }
+
+  .nav-row { display: flex; justify-content: space-between; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  .anon-note { color: #475569; font-size: 11px; text-align: center; margin-top: 18px; }
+
+  .results-inner { max-width: 1000px; margin: 0 auto; }
+  .results-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 32px; }
+  .results-title h2 { font-size: clamp(18px, 2.5vw, 26px); font-weight: 800; margin: 8px 0 4px; }
+  .results-title .rcount { color: #64748b; font-size: 13px; }
+  .header-btns { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+  .score-card { background: #1e293b; border-radius: 20px; padding: 28px 32px; margin-bottom: 24px; text-align: center; border: 2px solid transparent; }
+  .score-label { color: #94a3b8; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .score-num { font-size: 66px; font-weight: 900; line-height: 1; }
+  .score-num small { font-size: 24px; color: #64748b; font-weight: 600; }
+  .score-badge { display: inline-block; margin-top: 10px; padding: 5px 18px; border-radius: 99px; font-weight: 700; font-size: 14px; border: 1px solid transparent; }
+  .score-tier-desc { color: #94a3b8; font-size: 13px; line-height: 1.6; margin-top: 14px; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+  .chart-card { background: #1e293b; border: 1px solid #334155; border-radius: 20px; padding: 24px 20px; margin-bottom: 20px; }
+  .chart-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .chart-card p { color: #64748b; font-size: 12px; margin-bottom: 18px; }
+
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .metric-card { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 18px; }
+  .metric-num { color: #60a5fa; font-size: 10px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 6px; }
+  .metric-title { font-size: 14px; font-weight: 700; color: #f1f5f9; margin-bottom: 10px; line-height: 1.3; }
+  .metric-score-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .metric-pct { font-size: 28px; font-weight: 800; }
+  .metric-tier { font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase; }
+  .metric-bar { background: #0f172a; border-radius: 99px; height: 5px; overflow: hidden; margin-bottom: 10px; }
+  .metric-fill { height: 100%; border-radius: 99px; }
+  .metric-diag { color: #94a3b8; font-size: 12px; line-height: 1.5; }
+
+  .responses-table-wrap { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 20px; margin-bottom: 24px; overflow-x: auto; }
+  .responses-table-wrap h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .responses-table-wrap p { color: #64748b; font-size: 12px; margin-bottom: 14px; }
+  table.rtable { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 540px; }
+  table.rtable th, table.rtable td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #334155; }
+  table.rtable th { color: #94a3b8; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+  table.rtable td { color: #cbd5e1; }
+  table.rtable .r-score { color: #60a5fa; font-weight: 700; }
+  .r-action-btn { background: transparent; border: 1px solid #334155; color: #94a3b8; border-radius: 8px; padding: 5px 12px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .r-action-btn:hover { background: #1a56db; color: #fff; border-color: #1a56db; }
+
+  .footer-btns { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; padding-bottom: 40px; margin-top: 8px; }
+
+  .id-block { background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 20px; margin-bottom: 20px; text-align: left; }
+  .id-label { color: #94a3b8; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; display: block; }
+  .id-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .id-row:last-child { margin-bottom: 0; }
+  @media (max-width: 540px) { .id-row { grid-template-columns: 1fr; } }
+  .id-input { width: 100%; background: #0f172a; border: 1px solid #334155; color: #f1f5f9; border-radius: 10px; padding: 11px 14px; font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.15s; }
+  .id-input:focus { border-color: #60a5fa; }
+  .id-input::placeholder { color: #475569; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1e293b; border: 1px solid #334155; color: #f1f5f9; padding: 14px 24px; border-radius: 12px; font-size: 14px; font-weight: 600; z-index: 1000; opacity: 0; transition: opacity 0.3s; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,0.4); max-width: 90%; text-align: center; }
+  .toast.show { opacity: 1; }
+  .toast.success { border-color: #34d399; }
+  .toast.error { border-color: #f87171; }
+
+  /* ===== Accenture co-branding ===== */
+  .cobrand-bar {
+    display: flex; align-items: center; justify-content: center;
+    gap: 18px; flex-wrap: wrap; margin-bottom: 22px;
+  }
+  .cobrand-side { display: flex; align-items: center; gap: 10px; }
+  .cobrand-label {
+    color: #94a3b8; font-size: 12px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+  }
+  .cobrand-sep {
+    color: #64748b; font-size: 10px; font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase;
+    padding: 6px 14px; border-left: 1px solid #334155; border-right: 1px solid #334155;
+  }
+  .acc-mark {
+    color: #A100FF; font-size: 22px; font-weight: 900;
+    line-height: 1; transform: translateY(-1px);
+    text-shadow: 0 0 10px rgba(161, 0, 255, 0.35);
+  }
+  .acc-wordmark {
+    color: #f1f5f9; font-size: 17px; font-weight: 700;
+    letter-spacing: -0.4px;
+    font-family: 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
+  }
+  .cobrand-bar.compact { margin-bottom: 12px; gap: 12px; }
+  .cobrand-bar.compact .cobrand-label { font-size: 10px; letter-spacing: 1.5px; }
+  .cobrand-bar.compact .acc-wordmark { font-size: 14px; }
+  .cobrand-bar.compact .acc-mark { font-size: 18px; }
+  .cobrand-bar.compact .cobrand-sep { padding: 4px 10px; font-size: 9px; }
+  .cobrand-bar.compact .logo { width: 32px; height: 32px; font-size: 16px; border-radius: 8px; }
+
+  /* ===== Live indicator (presenter view polling) ===== */
+  .live-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(52, 211, 153, 0.12); border: 1px solid rgba(52, 211, 153, 0.4);
+    color: #34d399; padding: 4px 10px; border-radius: 99px;
+    font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    margin-left: 8px;
+  }
+  .live-pill::before {
+    content: ''; width: 7px; height: 7px; background: #34d399; border-radius: 50%;
+    box-shadow: 0 0 8px #34d399; animation: pulse 1.6s ease-in-out infinite;
+  }
+  .live-pill.offline { background: rgba(148, 163, 184, 0.1); border-color: rgba(148, 163, 184, 0.35); color: #94a3b8; }
+  .live-pill.offline::before { background: #94a3b8; box-shadow: none; animation: none; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+  }
+
+  /* ===== Backend setup panel (welcome screen) ===== */
+  .setup-panel {
+    background: #1e293b; border: 1px solid #334155; border-radius: 14px;
+    margin-top: 24px; text-align: left; overflow: hidden;
+  }
+  .setup-panel.unconfigured { border-color: #fbbf24; box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.2); }
+  .setup-panel.configured { border-color: rgba(52, 211, 153, 0.5); }
+  .setup-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px; cursor: pointer; user-select: none;
+    transition: background 0.15s;
+  }
+  .setup-header:hover { background: #253449; }
+  .setup-title { font-size: 13px; font-weight: 700; color: #f1f5f9; flex: 1; }
+  .setup-status {
+    font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 99px;
+  }
+  .setup-status.ok { background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.4); }
+  .setup-status.warn { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); }
+  .setup-status.err { background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.4); }
+  .setup-toggle { color: #64748b; font-size: 12px; transition: transform 0.2s; }
+  .setup-panel.open .setup-toggle { transform: rotate(180deg); }
+  .setup-body { display: none; padding: 4px 18px 18px; }
+  .setup-panel.open .setup-body { display: block; }
+  .setup-row { margin-bottom: 12px; }
+  .setup-row label {
+    display: block; font-size: 11px; font-weight: 700; color: #94a3b8;
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .setup-row input {
+    width: 100%; background: #0f172a; border: 1px solid #334155; color: #f1f5f9;
+    border-radius: 8px; padding: 10px 12px; font-size: 13px; font-family: 'Menlo', 'Consolas', monospace;
+    outline: none; transition: border-color 0.15s;
+  }
+  .setup-row input:focus { border-color: #60a5fa; }
+  .setup-row input::placeholder { color: #475569; }
+  .setup-row .helper { color: #64748b; font-size: 11px; margin-top: 4px; line-height: 1.4; }
+  .setup-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .setup-btn {
+    border: none; border-radius: 8px; padding: 9px 16px; font-size: 12px; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .setup-btn.primary { background: #1a56db; color: #fff; }
+  .setup-btn.primary:hover { background: #1e40af; }
+  .setup-btn.secondary { background: transparent; color: #94a3b8; border: 1px solid #334155; }
+  .setup-btn.secondary:hover { background: #0f172a; color: #f1f5f9; }
+  .setup-btn.ghost { background: transparent; color: #64748b; }
+  .setup-btn.ghost:hover { color: #f87171; }
+  .setup-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .setup-result {
+    margin-top: 14px; padding: 12px 14px; border-radius: 8px; font-size: 12px;
+    line-height: 1.5; display: none; font-family: 'Menlo', 'Consolas', monospace;
+  }
+  .setup-result.show { display: block; }
+  .setup-result.ok { background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.3); color: #34d399; }
+  .setup-result.err { background: rgba(248, 113, 113, 0.08); border: 1px solid rgba(248, 113, 113, 0.3); color: #f87171; }
+  .setup-result.info { background: rgba(96, 165, 250, 0.08); border: 1px solid rgba(96, 165, 250, 0.3); color: #93c5fd; }
+  .setup-result strong { color: inherit; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- WELCOME -->
+<div class="screen active" id="screen-welcome">
+  <div class="inner">
+    <div class="cobrand-bar">
+      <div class="cobrand-side">
+        <div class="logo">🏙️</div>
+        <span class="cobrand-label">Business Council of New York</span>
+      </div>
+      <div class="cobrand-sep">presented by</div>
+      <div class="cobrand-side">
+        <span class="acc-mark">&gt;</span>
+        <span class="acc-wordmark">accenture</span>
+      </div>
+    </div>
+    <h1>AI Success Parameters<br><span>Executive Readiness Diagnostic</span></h1>
+    <p class="sub">
+      Benchmark your organization across the eight parameters that drive AI success.<br>
+      16 questions · ~8 minutes · Aggregated with peers in real time.
+    </p>
+
+    <div class="param-preview-grid" id="param-preview-grid"></div>
+
+    <div class="id-block">
+      <label class="id-label">Optional — appears only on your individual report</label>
+      <div class="id-row">
+        <input class="id-input" id="role-input" placeholder="Your role (e.g., CEO, COO, CIO)" />
+        <input class="id-input" id="sector-input" placeholder="Sector (e.g., Financial Services)" />
+      </div>
+      <div class="id-row">
+        <input class="id-input" id="size-input" placeholder="Organization size (e.g., 500–2,000 employees)" />
+        <input class="id-input" id="org-input" placeholder="Organization (optional)" />
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="startAssessment()">Take the Diagnostic →</button>
+      <button class="btn btn-outline" onclick="showResults()">📊 Presenter View</button>
+      <button class="btn btn-outline" onclick="toggleQR('welcome')">📱 Show QR Code</button>
+    </div>
+    <div class="qr-box" id="qr-box-welcome" style="display:none;">
+      <p>Share with attendees — scan to open on any device</p>
+      <div id="qr-welcome"></div>
+      <p class="qr-url" id="qr-url-welcome"></p>
+    </div>
+    <p class="note">Individual Word report per respondent · Aggregated Word report for the full room</p>
+
+    <!-- Backend setup panel — for the presenter to wire up the Google Sheet backend -->
+    <div class="setup-panel" id="setup-panel">
+      <div class="setup-header" onclick="toggleSetupPanel()">
+        <span class="setup-title">⚙️ Backend Setup</span>
+        <span class="setup-status warn" id="setup-status">Not configured</span>
+        <span class="setup-toggle">▼</span>
+      </div>
+      <div class="setup-body">
+        <div class="setup-row">
+          <label>Apps Script Web App URL</label>
+          <input type="text" id="setup-apps-url" placeholder="https://script.google.com/macros/s/AKfycb…/exec" autocomplete="off" spellcheck="false" />
+          <p class="helper">Paste the URL from <strong>Apps Script → Deploy → Manage deployments → Web app URL</strong>. Required for room aggregation. Saved in this browser only.</p>
+        </div>
+        <div class="setup-row">
+          <label>GitHub Pages URL <span style="color:#475569;font-weight:500;text-transform:none;letter-spacing:0;">(optional)</span></label>
+          <input type="text" id="setup-pages-url" placeholder="https://username.github.io/repo/" autocomplete="off" spellcheck="false" />
+          <p class="helper">If set, the QR code points here instead of the current page URL — so attendees scanning from the back row always land on the canonical public page.</p>
+        </div>
+        <div class="setup-actions">
+          <button class="setup-btn primary" onclick="testAppsScriptConnection()">Test Connection</button>
+          <button class="setup-btn secondary" onclick="saveSetupConfig()">Save</button>
+          <button class="setup-btn secondary" onclick="saveSetupConfig(true)" title="Skip the GET test and save anyway — useful if the test fails but POST submissions actually work">Save anyway</button>
+          <button class="setup-btn ghost" onclick="clearSetupConfig()">Clear</button>
+        </div>
+        <div class="setup-result" id="setup-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ASSESSMENT -->
+<div class="screen" id="screen-vote">
+  <div class="vote-inner">
+    <div class="q-header">
+      <span class="q-label">BCNY · AI Readiness</span>
+      <span class="q-count" id="q-count">Parameter 1 of 8</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+
+    <div class="param-card" id="param-card">
+      <div class="param-number-big" id="param-number">PARAMETER 01 / 08</div>
+      <div class="param-title-big" id="param-title">—</div>
+      <div class="param-def-label">Definition</div>
+      <div class="param-def-text" id="param-def">—</div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-num">Question 1</div>
+      <div class="q-text" id="q1-text">—</div>
+      <div class="opt-grid" id="q1-opts"></div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-num">Question 2</div>
+      <div class="q-text" id="q2-text">—</div>
+      <div class="opt-grid" id="q2-opts"></div>
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-outline" id="back-btn" onclick="goBack()">← Previous</button>
+      <button class="btn btn-primary" id="next-btn" onclick="goNext()">Continue →</button>
+    </div>
+    <p class="anon-note">Your response is added to the room's aggregation. Identifying fields (if provided) appear only on your individual Word report.</p>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="results-screen" id="screen-results">
+  <div class="results-inner">
+    <div class="cobrand-bar compact">
+      <div class="cobrand-side">
+        <div class="logo">🏙️</div>
+        <span class="cobrand-label">Business Council of New York</span>
+      </div>
+      <div class="cobrand-sep">presented by</div>
+      <div class="cobrand-side">
+        <span class="acc-mark">&gt;</span>
+        <span class="acc-wordmark">accenture</span>
+      </div>
+    </div>
+    <div class="results-header">
+      <div class="results-title">
+        <span style="color:#60a5fa;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">BCNY · Live Results</span>
+        <h2>AI Success Parameters — Room Aggregate</h2>
+        <p class="rcount"><span id="rcount">0 responses</span><span class="live-pill offline" id="live-pill">Offline</span></p>
+      </div>
+      <div class="header-btns">
+        <button class="btn btn-primary btn-sm" onclick="downloadAggregateDocx()">⬇ Word</button>
+        <button class="btn btn-primary btn-sm" onclick="downloadAggregatePdf()">⬇ PDF</button>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV()">⬇ CSV</button>
+        <button class="btn btn-outline btn-sm" onclick="toggleQR('results')">📱 QR</button>
+      </div>
+    </div>
+
+    <div class="qr-box" id="qr-box-results" style="display:none;text-align:center;">
+      <p>Display on screen — attendees scan to take the diagnostic</p>
+      <div id="qr-results"></div>
+      <p class="qr-url" id="qr-url-results"></p>
+    </div>
+
+    <div class="score-card" id="score-card">
+      <p class="score-label">Aggregate AI Readiness · Composite Score</p>
+      <div class="score-num" id="score-num">—<small>/4.00</small></div>
+      <div class="score-badge" id="score-badge">—</div>
+      <p class="score-tier-desc" id="score-tier-desc"></p>
+    </div>
+
+    <div class="chart-card">
+      <h3>Parameter averages across the room</h3>
+      <p id="bar-sub">Mean score (1–4) for each of the eight AI success parameters</p>
+      <canvas id="bar-chart" height="240"></canvas>
+    </div>
+
+    <div class="metric-grid" id="metric-grid"></div>
+
+    <div class="chart-card">
+      <h3>Tier distribution</h3>
+      <p id="pie-sub">Composite readiness tier across all respondents</p>
+      <canvas id="pie-chart" height="220"></canvas>
+    </div>
+
+    <div class="responses-table-wrap">
+      <h3>Individual responses</h3>
+      <p>Download a personalized Word report for any respondent</p>
+      <table class="rtable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Role</th>
+            <th>Sector</th>
+            <th>Size</th>
+            <th>Score</th>
+            <th>Tier</th>
+            <th>Reports</th>
+          </tr>
+        </thead>
+        <tbody id="responses-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="footer-btns">
+      <button class="btn btn-primary" onclick="startAssessment()">Take the Diagnostic</button>
+      <button class="btn btn-outline" onclick="showWelcome()">← Back to Start</button>
+      <button class="btn btn-outline btn-sm" onclick="clearAllData()">Clear All Data</button>
+    </div>
+    <p class="note" style="text-align:center;padding-bottom:32px;">Responses stored locally on this device · Multiple respondents can submit from different devices</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   THE EIGHT AI SUCCESS PARAMETERS
+   ============================================================ */
+const PARAMETERS = [
+  {
+    id: 'culture',
+    title: 'Culture & Strategy',
+    definition: "The degree to which AI is embedded in the organization's strategic vision, with leadership alignment, articulated ambition, and a culture that embraces intelligent automation as a source of competitive advantage rather than a technology experiment.",
+    questions: [
+      {
+        q: 'How clearly has your organization articulated an enterprise AI strategy tied to measurable business outcomes?',
+        options: [
+          { label: 'No formal strategy exists yet', value: 1 },
+          { label: 'Exploratory — individual pilots, no unified vision', value: 2 },
+          { label: 'Strategy drafted; alignment underway', value: 3 },
+          { label: 'Clear strategy with board-level sponsorship and KPIs', value: 4 }
+        ]
+      },
+      {
+        q: 'To what extent does your leadership team actively champion AI adoption across business units?',
+        options: [
+          { label: 'Leadership is skeptical or disengaged', value: 1 },
+          { label: 'Interest exists in pockets; inconsistent messaging', value: 2 },
+          { label: 'Most executives support AI adoption publicly', value: 3 },
+          { label: 'CEO and C-suite drive AI as a strategic imperative', value: 4 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'workforce-avail',
+    title: 'Workforce Availability',
+    definition: 'The presence, distribution, and accessibility of talent with the skills required to design, deploy, govern, and use AI systems — spanning technical specialists, domain experts, and end-users capable of productive collaboration with AI tools.',
+    questions: [
+      {
+        q: 'How well-staffed is your organization with AI, machine learning, and data science talent?',
+        options: [
+          { label: 'No dedicated AI/ML talent in-house', value: 1 },
+          { label: 'A few individuals; heavy reliance on vendors', value: 2 },
+          { label: 'Established team; some key gaps remain', value: 3 },
+          { label: 'Deep bench across technical and applied roles', value: 4 }
+        ]
+      },
+      {
+        q: 'How broadly has your general workforce been trained to use AI tools effectively and responsibly?',
+        options: [
+          { label: 'Minimal or no AI literacy training provided', value: 1 },
+          { label: 'Ad-hoc training for select teams', value: 2 },
+          { label: 'Structured AI literacy programs in most functions', value: 3 },
+          { label: 'Enterprise-wide fluency with role-specific pathways', value: 4 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'workforce-reeng',
+    title: 'Workforce Re-engineering & Innovation',
+    definition: 'The redesign of roles, workflows, and organizational structures to take full advantage of AI capabilities — moving beyond layering AI onto existing processes toward genuine reinvention of how work gets done and value is created.',
+    questions: [
+      {
+        q: 'How systematically has your organization redesigned core workflows to integrate AI rather than simply adding it to existing processes?',
+        options: [
+          { label: 'Workflows remain unchanged; AI is bolted on', value: 1 },
+          { label: 'Isolated redesigns in one or two functions', value: 2 },
+          { label: 'Several functions have been meaningfully reimagined', value: 3 },
+          { label: 'Enterprise-wide operating model rebuilt around AI', value: 4 }
+        ]
+      },
+      {
+        q: 'How effective are your mechanisms for surfacing and scaling AI-driven innovation from across the organization?',
+        options: [
+          { label: 'No formal innovation channels for AI ideas', value: 1 },
+          { label: 'Occasional hackathons or internal forums', value: 2 },
+          { label: 'Structured intake, funding, and scaling process', value: 3 },
+          { label: 'Systematic innovation engine with measurable ROI', value: 4 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'risk',
+    title: 'Risk & Governance',
+    definition: 'The policies, controls, oversight structures, and accountability frameworks that ensure AI systems are deployed responsibly — addressing bias, privacy, security, regulatory compliance, model risk, and alignment with organizational values.',
+    questions: [
+      {
+        q: 'How mature is your AI governance framework, including policies, oversight bodies, and accountability structures?',
+        options: [
+          { label: 'No formal AI governance in place', value: 1 },
+          { label: 'Early policies drafted; oversight informal', value: 2 },
+          { label: 'Governance committee with documented policies', value: 3 },
+          { label: 'Comprehensive framework audited and continuously refined', value: 4 }
+        ]
+      },
+      {
+        q: 'How prepared is your organization for evolving AI regulation, including New York State and federal requirements?',
+        options: [
+          { label: 'Limited awareness of applicable AI regulations', value: 1 },
+          { label: 'Monitoring developments; compliance plans nascent', value: 2 },
+          { label: 'Compliance roadmap active; controls being implemented', value: 3 },
+          { label: 'Proactive compliance posture; engaged with policymakers', value: 4 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'data',
+    title: 'Data for AI',
+    definition: 'The availability, quality, accessibility, and ethical stewardship of the data assets that fuel AI — including data infrastructure, metadata, lineage, governance, and the ability to combine proprietary and external data safely and at scale.',
+    questions: [
+      {
+        q: 'How would you rate the quality, accessibility, and integration of data across your enterprise for AI use cases?',
+        options: [
+          { label: 'Fragmented, siloed, and largely inaccessible', value: 1 },
+          { label: 'Some integration; quality issues persist', value: 2 },
+          { label: 'Mostly unified with established data products', value: 3 },
+          { label: 'Enterprise data platform with high-quality AI-ready assets', value: 4 }
+        ]
+      },
+      {
+        q: 'How robust are your data governance, privacy, and security practices as applied to AI workloads?',
+        options: [
+          { label: 'Informal or inconsistent data governance', value: 1 },
+          { label: 'Baseline controls; gaps for AI-specific risks', value: 2 },
+          { label: 'Strong governance with AI-specific extensions', value: 3 },
+          { label: 'Best-in-class program including model and data lineage', value: 4 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'engineering',
+    title: 'AI Engineering',
+    definition: 'The disciplined technical practice of building, testing, deploying, monitoring, and maintaining AI systems in production — including MLOps, model lifecycle management, evaluation frameworks, and the platform infrastructure to do this reliably at scale.',
+    questions: [
+      {
+        q: 'How mature are your MLOps and AI engineering capabilities for deploying and monitoring models in production?',
+        options: [
+          { label: 'Manual processes; few models in production', value: 1 },
+          { label: 'Basic deployment; monitoring is limited', value: 2 },
+          { label: 'Mature MLOps platform for most models', value: 3 },
+          { label: 'Industrial-grade platform with continuous evaluation', value: 4 }
+        ]
+      },
+      {
+        q: 'How rigorous are your evaluation, testing, and quality assurance practices for AI systems before and after deployment?',
+        options: [
+          { label: 'Ad-hoc testing; no formal evaluation standards', value: 1 },
+          { label: 'Basic evaluation at launch; limited ongoing review', value: 2 },
+          { label: 'Standardized evaluation throughout model lifecycle', value: 3 },
+          { label: 'Rigorous evaluation including adversarial testing and audits', value: 4 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'ecosystem',
+    title: 'AI Ecosystem',
+    definition: "The network of external partners, vendors, academic institutions, startups, and peer organizations that extends internal capability — and the organization's ability to select, integrate, and derive advantage from this ecosystem responsibly.",
+    questions: [
+      {
+        q: 'How strategically does your organization leverage external AI partners, vendors, and platforms to accelerate capability?',
+        options: [
+          { label: 'Ad-hoc or reactive vendor relationships', value: 1 },
+          { label: 'Several partnerships; limited strategic coordination', value: 2 },
+          { label: 'Curated ecosystem aligned to strategic priorities', value: 3 },
+          { label: 'Highly orchestrated ecosystem delivering durable advantage', value: 4 }
+        ]
+      },
+      {
+        q: "How active is your engagement with New York's broader AI ecosystem — universities, industry consortia, and public-sector partners?",
+        options: [
+          { label: 'Limited external engagement', value: 1 },
+          { label: 'Occasional collaboration on specific initiatives', value: 2 },
+          { label: 'Sustained relationships with multiple institutions', value: 3 },
+          { label: 'Anchor role in regional innovation networks', value: 4 }
+        ]
+      }
+    ]
+  },
+  {
+    id: 'operations',
+    title: 'Operations & Sustainment',
+    definition: 'The operational discipline required to keep AI systems performant, trustworthy, and valuable over time — including cost management, drift detection, retraining cadence, incident response, and the organizational muscle to sustain a growing AI portfolio.',
+    questions: [
+      {
+        q: 'How effectively does your organization sustain AI systems post-deployment, including monitoring for drift, retraining, and cost management?',
+        options: [
+          { label: 'No formal sustainment; models degrade unnoticed', value: 1 },
+          { label: 'Reactive maintenance; limited drift monitoring', value: 2 },
+          { label: 'Structured sustainment with routine retraining', value: 3 },
+          { label: 'Mature operational discipline across full AI portfolio', value: 4 }
+        ]
+      },
+      {
+        q: 'How clearly can your organization measure and demonstrate the business value realized from AI investments?',
+        options: [
+          { label: 'Value is largely anecdotal or unmeasured', value: 1 },
+          { label: 'Some ROI tracked on individual initiatives', value: 2 },
+          { label: 'Portfolio-level value measurement in place', value: 3 },
+          { label: 'Rigorous value realization tied to enterprise financials', value: 4 }
+        ]
+      }
+    ]
+  }
+];
+
+/* ============================================================
+   TIERS + DIAGNOSTICS
+   ============================================================ */
+const TIERS = {
+  foundational: {
+    name: 'Foundational',
+    range: [1, 1.75],
+    color: '#f87171',
+    desc: "Early-stage readiness. The organization is aware of AI's potential but lacks the strategic alignment, infrastructure, or operational discipline to deploy it at scale. Focus on establishing executive sponsorship, building a data foundation, and piloting in contained, high-learning environments."
+  },
+  emerging: {
+    name: 'Emerging',
+    range: [1.75, 2.5],
+    color: '#fbbf24',
+    desc: "Momentum is building. Pockets of capability and isolated successes exist, but the enterprise has yet to weave these threads into a coherent operating fabric. Priorities: formalize governance, invest in workforce literacy, and convert pilots into production systems with measurable outcomes."
+  },
+  advancing: {
+    name: 'Advancing',
+    range: [2.5, 3.25],
+    color: '#60a5fa',
+    desc: "Solid footing across most parameters. The organization is deploying AI with discipline, measuring outcomes, and scaling beyond the first wave of use cases. The next frontier is re-engineering workflows at depth, maturing AI engineering practices, and extracting compounding value from the ecosystem."
+  },
+  leading: {
+    name: 'Leading',
+    range: [3.25, 4.0],
+    color: '#34d399',
+    desc: "Among New York's front rank. AI is woven into strategy, operations, and culture. The imperative now shifts to sustaining advantage — elevating governance to match ambition, anchoring regional innovation, and ensuring that workforce transformation keeps pace with technical capability."
+  }
+};
+
+function tierForScore(score) {
+  for (const key in TIERS) {
+    const t = TIERS[key];
+    if (score >= t.range[0] && score <= t.range[1] + 0.0001) return t;
+  }
+  return TIERS.foundational;
+}
+
+const PARAM_DIAGNOSTICS = {
+  'culture': {
+    1: 'Strategy is the gating constraint. Before further investment, convene the executive team around a single-page AI thesis with named sponsors and outcome metrics.',
+    2: 'Enthusiasm outpaces alignment. Consolidate pilots under a board-visible strategy and retire initiatives that do not ladder to it.',
+    3: 'Strategic foundation is in place. Sharpen KPIs, make AI a standing board agenda item, and tie executive compensation to adoption outcomes.',
+    4: 'Strategy is a genuine asset. Protect it by refreshing annually and ensuring downstream functions remain resourced to execute.'
+  },
+  'workforce-avail': {
+    1: 'Talent scarcity will blunt every other investment. Stand up a hiring plan and partner with NY universities for pipeline development.',
+    2: 'Capacity is fragile. Reduce vendor dependency by investing in core internal teams and formalizing an AI career architecture.',
+    3: 'Talent is a strength. Shift focus to retention, role specialization, and scaling AI fluency across non-technical functions.',
+    4: 'Workforce depth is a competitive moat. Protect it through continuous learning and by exporting talent leadership to the broader NY ecosystem.'
+  },
+  'workforce-reeng': {
+    1: 'AI layered on legacy workflows yields limited return. Select one high-volume process and redesign it end-to-end as a proof of concept.',
+    2: 'Early wins need a repeatable playbook. Codify workflow redesign methodology and assign reinvention accountability to business-unit leaders.',
+    3: 'Reinvention is maturing. Expand from function-level to cross-functional value streams, where the largest compounding gains live.',
+    4: 'Operating model is a source of advantage. Institutionalize continuous reinvention and treat innovation pipeline health as a board metric.'
+  },
+  'risk': {
+    1: 'Governance gap is a material risk. Establish an AI governance committee and interim policies within the quarter.',
+    2: 'Foundations exist but are untested. Conduct a governance stress test and close gaps in model risk, bias, and third-party AI oversight.',
+    3: 'Governance is credible. Elevate to board-level reporting and build scenario readiness for emerging NY and federal regulation.',
+    4: 'Governance is a differentiator. Share your framework publicly to shape standards and attract trust-sensitive customers and talent.'
+  },
+  'data': {
+    1: 'Data foundation will throttle AI ambition. Prioritize a unified data platform before expanding the AI portfolio.',
+    2: 'Data debt is the quiet tax on every initiative. Invest in data products tied to the top three AI use cases.',
+    3: 'Data is a real asset. Extend governance to model lineage and invest in responsible external data partnerships.',
+    4: 'Data is a strategic moat. Monetize it through partnerships and platform plays where regulation and context permit.'
+  },
+  'engineering': {
+    1: 'AI engineering is the missing engine. Without it, models will not reach or survive production. Invest in a platform team.',
+    2: 'Engineering is fragile. Consolidate tooling, establish evaluation standards, and move to a single MLOps reference architecture.',
+    3: 'Engineering discipline is strong. Invest in continuous evaluation and agentic-system readiness for the next generation of AI.',
+    4: 'Engineering is best-in-class. Use the platform advantage to ship faster than competitors and to set internal standards others will follow.'
+  },
+  'ecosystem': {
+    1: 'Isolation is expensive. Map the NY AI ecosystem and establish two or three anchor partnerships this year.',
+    2: 'Partnerships lack a thesis. Curate your ecosystem against strategy and retire relationships that do not compound.',
+    3: 'Ecosystem posture is healthy. Move from participant to convener by hosting forums and co-investing in shared infrastructure.',
+    4: 'You are an ecosystem anchor. Leverage that role to shape NY AI policy and talent agenda through the Business Council.'
+  },
+  'operations': {
+    1: 'Models in production without sustainment will erode trust faster than they create value. Institute baseline monitoring immediately.',
+    2: 'Sustainment is reactive. Move to proactive drift detection, retraining cadences, and portfolio-level cost visibility.',
+    3: 'Operations are disciplined. Elevate to portfolio-level value realization reporting tied directly to enterprise P&L.',
+    4: 'Operations are a durable capability. Use the discipline to sustain a larger, more ambitious AI portfolio than peers can support.'
+  }
+};
+
+/* ============================================================
+   STATE + REMOTE CONFIG
+   ============================================================
+   The two URLs below are fallback defaults. The presenter can
+   override them at runtime via the ⚙️ Backend Setup panel on
+   the welcome screen — those values are stored in this browser's
+   localStorage and take precedence on reload. That means you can
+   distribute one HTML file and configure each event in-page,
+   without touching source.
+
+   To bake in defaults instead, replace the placeholders below.
+   ============================================================ */
+let APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxfMY_pmUfnsArR-w17OnpyBzexlR_Zg5t4otEw1ziq6ETHCEW0nMHfiRQfBuGbsyOiNQ/exec';
+let GITHUB_PAGES_URL = 'https://mreinhardt967.github.io/BCNYS/';
+const POLL_INTERVAL_MS = 5000;
+const SETUP_CONFIG_KEY = 'bcny_ai_setup_config_v1';
+
+const STORAGE_KEY = 'bcny_ai_params_submissions_v1';
+
+let currentParam = 0;
+let currentAnswers = {};
+let currentIdentity = { role: '', sector: '', size: '', org: '' };
+let barChart = null, pieChart = null;
+let qrWelcomeDone = false, qrResultsDone = false;
+let remoteSubmissions = [];
+let pollInterval = null;
+let lastPollOk = false;
+let lastResultsSignature = '';
+
+/* Compact signature of the data the presenter view actually displays.
+   Includes ids and overall scores so any meaningful change triggers a
+   re-render, but two identical polls produce the same signature and skip
+   the expensive Chart.js destroy/rebuild cycle. */
+function getResultsSignature() {
+  const all = getAllSubmissions();
+  return all.length + '|' + all.map(s => s.id + ':' + s.overall).join(',');
+}
+
+function isAppsScriptConfigured() {
+  return APPS_SCRIPT_URL && !APPS_SCRIPT_URL.includes('REPLACE_WITH_YOUR');
+}
+function isGithubPagesConfigured() {
+  return GITHUB_PAGES_URL && !GITHUB_PAGES_URL.includes('REPLACE_WITH_YOUR');
+}
+
+function loadSubmissions() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function saveSubmissions(arr) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+function addSubmission(record) {
+  const all = loadSubmissions();
+  all.push(record);
+  saveSubmissions(all);
+}
+
+/* Combine local-device submissions with remote (Google Sheet) submissions,
+   de-duplicating by record id. Local always wins on conflict because it
+   has the freshest, server-untruncated payload. */
+function getAllSubmissions() {
+  const local = loadSubmissions();
+  const seen = new Set(local.map(s => s.id));
+  const remoteOnly = remoteSubmissions.filter(s => s && s.id && !seen.has(s.id));
+  return local.concat(remoteOnly).sort((a, b) =>
+    new Date(a.timestamp) - new Date(b.timestamp)
+  );
+}
+
+/* ============================================================
+   REMOTE SUBMISSION (anonymous → Google Sheet via Apps Script)
+   ============================================================
+   We POST as text/plain to avoid the CORS preflight that Apps Script
+   web apps don't answer. The Apps Script reads e.postData.contents
+   and JSON.parses on the server side.
+   ============================================================ */
+async function submitToServer(record) {
+  if (!isAppsScriptConfigured()) return { ok: false, skipped: true };
+  const payload = JSON.stringify(record);
+
+  // PRIMARY PATH: navigator.sendBeacon.
+  // sendBeacon is purpose-built for fire-and-forget POST submissions and
+  // bypasses most mobile Safari CORS quirks, content blockers, and
+  // iCloud Private Relay restrictions that block cross-origin fetch().
+  // We can't read the response (it's opaque), but we don't need to —
+  // Apps Script appends the row regardless, and if sendBeacon returns
+  // true, the browser has committed to delivering the payload.
+  if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+    try {
+      const blob = new Blob([payload], { type: 'text/plain;charset=utf-8' });
+      const queued = navigator.sendBeacon(APPS_SCRIPT_URL, blob);
+      if (queued) return { ok: true, method: 'sendBeacon' };
+      // queued === false means payload too large or browser refused;
+      // fall through to fetch.
+    } catch (e) {
+      console.warn('sendBeacon threw, falling back to fetch:', e);
+    }
+  }
+
+  // FALLBACK PATH: fetch with text/plain.
+  // Used when sendBeacon is unavailable or refused the payload.
+  // text/plain content-type keeps this a CORS "simple request" — no
+  // preflight, which Apps Script web apps don't answer anyway.
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: payload,
+      redirect: 'follow'
+    });
+    const data = await res.json().catch(() => ({ ok: true }));
+    return Object.assign({ method: 'fetch' }, data);
+  } catch (e) {
+    console.warn('submitToServer fetch failed:', e);
+    return { ok: false, error: String(e), method: 'fetch' };
+  }
+}
+
+async function fetchRemoteSubmissions() {
+  if (!isAppsScriptConfigured()) {
+    setLivePill(false, 'Local only');
+    return;
+  }
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, { method: 'GET' });
+    const data = await res.json();
+    if (data && data.ok && Array.isArray(data.submissions)) {
+      remoteSubmissions = data.submissions;
+      lastPollOk = true;
+      setLivePill(true, 'Live');
+      // Only re-render charts/table if the data actually changed.
+      // Without this guard, Chart.js destroys and rebuilds both charts
+      // every 5 seconds, causing visible flicker even when no new
+      // respondents have submitted.
+      const sig = getResultsSignature();
+      if (sig !== lastResultsSignature) {
+        renderResults();
+      }
+    } else {
+      setLivePill(false, 'Sync error');
+    }
+  } catch (e) {
+    console.warn('fetchRemoteSubmissions failed:', e);
+    setLivePill(false, lastPollOk ? 'Reconnecting…' : 'Offline');
+  }
+}
+
+function startPolling() {
+  if (pollInterval) clearInterval(pollInterval);
+  fetchRemoteSubmissions();
+  pollInterval = setInterval(fetchRemoteSubmissions, POLL_INTERVAL_MS);
+}
+
+function stopPolling() {
+  if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+}
+
+function setLivePill(online, label) {
+  const pill = document.getElementById('live-pill');
+  if (!pill) return;
+  pill.textContent = label;
+  pill.classList.toggle('offline', !online);
+}
+
+/* ============================================================
+   BACKEND SETUP PANEL
+   ============================================================
+   Lets the presenter paste their Apps Script URL into the page,
+   test it, and save it to localStorage — so the same HTML file
+   can be reused across events without editing source. The saved
+   values override the defaults declared at the top of this script.
+   ============================================================ */
+function loadSetupConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SETUP_CONFIG_KEY) || '{}');
+    if (saved.appsScriptUrl) APPS_SCRIPT_URL = saved.appsScriptUrl;
+    if (saved.githubPagesUrl) GITHUB_PAGES_URL = saved.githubPagesUrl;
+  } catch (e) { /* ignore corrupt config */ }
+  // Reflect into the UI
+  const appsInput = document.getElementById('setup-apps-url');
+  const pagesInput = document.getElementById('setup-pages-url');
+  if (appsInput && isAppsScriptConfigured()) appsInput.value = APPS_SCRIPT_URL;
+  if (pagesInput && isGithubPagesConfigured()) pagesInput.value = GITHUB_PAGES_URL;
+  refreshSetupStatus();
+}
+
+function refreshSetupStatus() {
+  const panel = document.getElementById('setup-panel');
+  const status = document.getElementById('setup-status');
+  if (!panel || !status) return;
+  panel.classList.remove('configured', 'unconfigured');
+  status.classList.remove('ok', 'warn', 'err');
+  if (isAppsScriptConfigured()) {
+    panel.classList.add('configured');
+    status.classList.add('ok');
+    status.textContent = 'Configured';
+  } else {
+    panel.classList.add('unconfigured');
+    status.classList.add('warn');
+    status.textContent = 'Not configured';
+  }
+}
+
+function toggleSetupPanel() {
+  const panel = document.getElementById('setup-panel');
+  if (panel) panel.classList.toggle('open');
+}
+
+function setSetupResult(kind, html) {
+  const el = document.getElementById('setup-result');
+  if (!el) return;
+  el.className = 'setup-result show ' + kind;
+  el.innerHTML = html;
+}
+
+function clearSetupResult() {
+  const el = document.getElementById('setup-result');
+  if (el) el.className = 'setup-result';
+}
+
+async function testAppsScriptConnection() {
+  const urlRaw = (document.getElementById('setup-apps-url')?.value || '').trim();
+  if (!urlRaw) {
+    setSetupResult('err', 'Paste an Apps Script Web App URL first.');
+    return;
+  }
+  if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec\/?$/i.test(urlRaw)) {
+    setSetupResult('err',
+      "That doesn't look like a Web App URL. It should be of the form:<br>" +
+      "<strong>https://script.google.com/macros/s/AKfycb…/exec</strong><br>" +
+      "Get it from <strong>Apps Script → Deploy → Manage deployments</strong>."
+    );
+    return;
+  }
+
+  // Flag common environment gotchas before firing the fetch
+  if (window.location.protocol === 'file:') {
+    setSetupResult('err',
+      "You're viewing this page from <strong>file://</strong>. Most browsers block cross-origin " +
+      "fetches from local files. Either publish the page to GitHub Pages (recommended) or serve " +
+      "it locally with <code>python3 -m http.server</code>, then reload."
+    );
+    return;
+  }
+
+  setSetupResult('info', 'Pinging the Apps Script web app… (cold starts can take 5–10s)');
+
+  // Promise.race for timeout instead of AbortController — AbortSignal can't be
+  // structured-cloned, which breaks fetch in sandboxed iframes that proxy
+  // network calls to the parent window via postMessage (e.g. artifact previews).
+  const TIMEOUT_MS = 15000;
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('__TIMEOUT__')), TIMEOUT_MS)
+  );
+
+  try {
+    const res = await Promise.race([
+      fetch(urlRaw, { method: 'GET', redirect: 'follow' }),
+      timeoutPromise
+    ]);
+    const finalUrl = res.url || urlRaw;
+    const body = await res.text();
+    const preview = body.length > 240 ? body.slice(0, 240) + '…' : body;
+    const escapedPreview = preview.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+    // Follow-the-redirect into the sign-in flow = access level isn't "Anyone"
+    if (/accounts\.google\.com|ServiceLogin/.test(finalUrl) || /<title>.*Sign in.*<\/title>/i.test(body)) {
+      setSetupResult('err',
+        "<strong>Access level is wrong.</strong> The deployment redirected to a Google sign-in page, " +
+        "which means it's not accessible to \"Anyone\". " +
+        "Fix: in Apps Script, <strong>Deploy → Manage deployments → pencil icon → " +
+        "Who has access: Anyone</strong> → Deploy new version. " +
+        "You can still click <strong>Save anyway</strong> below to test a real submission."
+      );
+      return;
+    }
+
+    if (!res.ok) {
+      setSetupResult('err',
+        `<strong>HTTP ${res.status}</strong> from the deployment. Response preview:<br>` +
+        `<span style="opacity:.7">${escapedPreview}</span>`
+      );
+      return;
+    }
+
+    let data;
+    try { data = JSON.parse(body); }
+    catch (e) {
+      // Not JSON — usually means: HTML error page, Apps Script syntax error, or wrong URL
+      const looksLikeHtml = /<html|<!DOCTYPE/i.test(body);
+      const msg = looksLikeHtml
+        ? "The URL returned HTML, not JSON. Likely causes: (a) your Apps Script has a syntax " +
+          "error — open <strong>Apps Script → Executions</strong> to see the stack trace; or " +
+          "(b) you pasted the editor/share URL instead of the deployment URL."
+        : "The URL responded but the body wasn't JSON.";
+      setSetupResult('err',
+        msg + "<br>Response preview:<br><span style=\"opacity:.7\">" + escapedPreview + "</span>"
+      );
+      console.warn('[Test Connection] non-JSON response:', body);
+      return;
+    }
+
+    if (data && data.ok) {
+      const count = data.count || (data.submissions ? data.submissions.length : 0);
+      setSetupResult('ok',
+        `<strong>Connected.</strong> The sheet currently holds <strong>${count}</strong> response${count === 1 ? '' : 's'}. ` +
+        `Click <strong>Save</strong> to persist this URL in your browser.`
+      );
+    } else {
+      setSetupResult('err',
+        `Apps Script responded but reported an error: <strong>${data.error || 'unknown'}</strong>. ` +
+        `Open the Apps Script editor → <strong>Executions</strong> tab to see the stack trace.`
+      );
+    }
+  } catch (e) {
+    if (e.message === '__TIMEOUT__') {
+      setSetupResult('err',
+        "The request timed out after 15 seconds. Apps Script cold starts can be slow — " +
+        "try Test Connection again. If it keeps timing out, check that the deployment is active " +
+        "under <strong>Apps Script → Deploy → Manage deployments</strong>."
+      );
+      return;
+    }
+    // TypeError: Failed to fetch is usually CORS, offline, or an invalid URL
+    const inIframe = (() => { try { return window.self !== window.top; } catch (_) { return true; } })();
+    if (inIframe && /Failed to fetch|NetworkError|Load failed/i.test(e.message)) {
+      setSetupResult('err',
+        "<strong>This page is running inside a sandboxed iframe</strong> (artifact preview or similar), " +
+        "which blocks fetches to <code>script.google.com</code> before they leave the browser. " +
+        "That's why you're seeing <em>Failed to fetch</em> with no HTTP status. " +
+        "To actually test the connection: " +
+        "<strong>(1)</strong> publish the HTML to GitHub Pages and test there, " +
+        "<strong>(2)</strong> serve it locally with <code>python3 -m http.server</code>, or " +
+        "<strong>(3)</strong> click <strong>Save anyway</strong> and verify by taking the diagnostic " +
+        "on your phone — POST submissions bypass this sandbox restriction in most cases."
+      );
+      console.warn('[Test Connection] fetch error (sandboxed iframe):', e);
+      return;
+    }
+    setSetupResult('err',
+      `<strong>Network error:</strong> ${e.message}.<br>` +
+      "Common causes: (a) the deployment was deleted; (b) you're behind a corporate proxy/firewall " +
+      "blocking <code>script.google.com</code>; (c) the page is being served from <code>file://</code>; " +
+      "(d) a browser extension (ad blocker, privacy tool) is blocking the request. " +
+      "If you're confident the URL is right, click <strong>Save anyway</strong> — real submissions " +
+      "sometimes work even when the GET test fails."
+    );
+    console.warn('[Test Connection] fetch error:', e);
+  }
+}
+
+function saveSetupConfig(force) {
+  const apps = (document.getElementById('setup-apps-url')?.value || '').trim();
+  const pages = (document.getElementById('setup-pages-url')?.value || '').trim();
+  const config = {};
+  if (apps) config.appsScriptUrl = apps;
+  if (pages) config.githubPagesUrl = pages;
+  try {
+    localStorage.setItem(SETUP_CONFIG_KEY, JSON.stringify(config));
+  } catch (e) {
+    setSetupResult('err', 'Could not save: ' + e.message);
+    return;
+  }
+  // Apply immediately
+  APPS_SCRIPT_URL = apps || APPS_SCRIPT_URL;
+  GITHUB_PAGES_URL = pages || GITHUB_PAGES_URL;
+  // QR was generated against the old URL — invalidate so it regenerates on next open
+  qrWelcomeDone = false; qrResultsDone = false;
+  refreshSetupStatus();
+  if (force) {
+    setSetupResult('info',
+      `<strong>Saved (bypass mode).</strong> The GET test was skipped. ` +
+      `To confirm the wiring end-to-end: take the diagnostic on your phone, then check your ` +
+      `Google Sheet for a new row. If the row appears, POST is working even though the GET test didn't.`
+    );
+  } else {
+    setSetupResult('ok',
+      `<strong>Saved.</strong> ` +
+      (apps ? 'Submissions will now sync to your sheet. ' : '') +
+      (pages ? 'QR will point to your GitHub Pages URL. ' : '')
+    );
+  }
+  showToast('Backend configuration saved', 'success');
+}
+
+function clearSetupConfig() {
+  if (!confirm('Clear the saved backend configuration from this browser?')) return;
+  try { localStorage.removeItem(SETUP_CONFIG_KEY); } catch (e) {}
+  // Reset to file defaults (the baked-in URLs)
+  APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxfMY_pmUfnsArR-w17OnpyBzexlR_Zg5t4otEw1ziq6ETHCEW0nMHfiRQfBuGbsyOiNQ/exec';
+  GITHUB_PAGES_URL = 'https://mreinhardt967.github.io/BCNYS/';
+  const appsInput = document.getElementById('setup-apps-url');
+  const pagesInput = document.getElementById('setup-pages-url');
+  if (appsInput) appsInput.value = '';
+  if (pagesInput) pagesInput.value = '';
+  qrWelcomeDone = false; qrResultsDone = false;
+  refreshSetupStatus();
+  clearSetupResult();
+  showToast('Backend configuration cleared', 'success');
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function showScreen(id) {
+  document.querySelectorAll('.screen, .results-screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function showWelcome() { stopPolling(); showScreen('screen-welcome'); }
+function showResults() { renderResults(); showScreen('screen-results'); startPolling(); }
+
+function startAssessment() {
+  stopPolling();
+  currentParam = 0;
+  currentAnswers = {};
+  PARAMETERS.forEach(p => currentAnswers[p.id] = [null, null]);
+  currentIdentity = {
+    role: (document.getElementById('role-input')?.value || '').trim(),
+    sector: (document.getElementById('sector-input')?.value || '').trim(),
+    size: (document.getElementById('size-input')?.value || '').trim(),
+    org: (document.getElementById('org-input')?.value || '').trim()
+  };
+  renderParameter();
+  showScreen('screen-vote');
+}
+
+function renderParamPreview() {
+  const grid = document.getElementById('param-preview-grid');
+  grid.innerHTML = PARAMETERS.map((p, i) => `
+    <div class="param-preview-card">
+      <div class="param-preview-num">0${i + 1} / 08</div>
+      <div class="param-preview-title">${p.title}</div>
+    </div>
+  `).join('');
+}
+
+function renderParameter() {
+  const p = PARAMETERS[currentParam];
+  const num = String(currentParam + 1).padStart(2, '0');
+
+  document.getElementById('q-count').textContent = `Parameter ${currentParam + 1} of ${PARAMETERS.length}`;
+  document.getElementById('progress-fill').style.width = `${((currentParam) / PARAMETERS.length) * 100}%`;
+
+  document.getElementById('param-number').textContent = `PARAMETER ${num} / 08`;
+  document.getElementById('param-title').textContent = p.title;
+  document.getElementById('param-def').textContent = p.definition;
+
+  p.questions.forEach((q, qi) => {
+    document.getElementById(`q${qi + 1}-text`).textContent = q.q;
+    renderOptions(p.id, qi);
+  });
+
+  document.getElementById('back-btn').style.visibility = currentParam === 0 ? 'hidden' : 'visible';
+  document.getElementById('next-btn').textContent = currentParam === PARAMETERS.length - 1 ? 'See Diagnostic →' : 'Continue →';
+}
+
+function renderOptions(paramId, qIdx) {
+  const p = PARAMETERS.find(x => x.id === paramId);
+  const q = p.questions[qIdx];
+  const currentVal = currentAnswers[paramId][qIdx];
+  const optsEl = document.getElementById(`q${qIdx + 1}-opts`);
+  optsEl.innerHTML = q.options.map(opt => {
+    const selected = currentVal === opt.value ? 'selected' : '';
+    return `<button class="opt-btn ${selected}" onclick="selectOption('${paramId}', ${qIdx}, ${opt.value})">
+      <span class="opt-level">LEVEL ${opt.value}</span>
+      <span>${opt.label}</span>
+    </button>`;
+  }).join('');
+}
+
+function selectOption(paramId, qIdx, value) {
+  currentAnswers[paramId][qIdx] = value;
+  renderOptions(paramId, qIdx);
+}
+
+function goBack() {
+  if (currentParam > 0) {
+    currentParam--;
+    renderParameter();
+  }
+}
+
+function goNext() {
+  const p = PARAMETERS[currentParam];
+  const a = currentAnswers[p.id];
+  if (a[0] === null || a[1] === null) {
+    showToast('Please answer both questions before continuing.', 'error');
+    return;
+  }
+  if (currentParam < PARAMETERS.length - 1) {
+    currentParam++;
+    renderParameter();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    completeAssessment();
+  }
+}
+
+function completeAssessment() {
+  const paramScores = PARAMETERS.map(p => {
+    const [a, b] = currentAnswers[p.id];
+    return { id: p.id, title: p.title, score: (a + b) / 2, a, b };
+  });
+  const overall = paramScores.reduce((s, ps) => s + ps.score, 0) / paramScores.length;
+  const tier = tierForScore(overall);
+
+  const record = {
+    id: 'r-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    timestamp: new Date().toISOString(),
+    role: currentIdentity.role,
+    sector: currentIdentity.sector,
+    size: currentIdentity.size,
+    org: currentIdentity.org,
+    overall: Number(overall.toFixed(2)),
+    tier: tier.name,
+    params: paramScores.map(ps => ({ id: ps.id, title: ps.title, score: Number(ps.score.toFixed(2)), a: ps.a, b: ps.b }))
+  };
+
+  addSubmission(record);
+  showToast('Response submitted · Generating your individual report…', 'success');
+
+  // Fire-and-forget remote submission so the room aggregate updates everywhere.
+  // We don't await — the user shouldn't wait on the network for their report.
+  submitToServer(record).then(res => {
+    if (res && res.ok) console.log('Synced to room aggregate');
+    else if (res && res.skipped) console.log('Apps Script not configured — local only');
+    else console.warn('Remote sync failed (response saved locally):', res);
+  });
+
+  setTimeout(() => {
+    renderResults();
+    showScreen('screen-results');
+    startPolling();
+    downloadIndividualDocx(record.id);
+  }, 500);
+}
+
+/* ============================================================
+   RESULTS
+   ============================================================ */
+function renderResults() {
+  const subs = getAllSubmissions();
+  const n = subs.length;
+
+  document.getElementById('rcount').textContent = `${n} response${n !== 1 ? 's' : ''} aggregated`;
+
+  if (n === 0) {
+    document.getElementById('score-num').innerHTML = '—<small>/4.00</small>';
+    document.getElementById('score-num').style.color = '#64748b';
+    const sb = document.getElementById('score-badge');
+    sb.textContent = 'No responses yet'; sb.style.color = '#94a3b8'; sb.style.background = 'rgba(51,65,85,0.2)'; sb.style.borderColor = '#334155';
+    document.getElementById('score-card').style.borderColor = 'rgba(51,65,85,0.4)';
+    document.getElementById('score-tier-desc').textContent = 'Invite executives to scan the QR code and submit their responses to populate the aggregate view.';
+    document.getElementById('metric-grid').innerHTML = '';
+    document.getElementById('responses-tbody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#64748b;padding:20px;">No responses yet.</td></tr>';
+    if (barChart) { barChart.destroy(); barChart = null; }
+    if (pieChart) { pieChart.destroy(); pieChart = null; }
+    lastResultsSignature = getResultsSignature();
+    return;
+  }
+
+  const paramAgg = PARAMETERS.map(p => {
+    const scores = subs.map(s => (s.params.find(x => x.id === p.id) || {}).score).filter(x => x != null);
+    const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+    return { id: p.id, title: p.title, avg };
+  });
+
+  const composite = paramAgg.reduce((s, p) => s + p.avg, 0) / paramAgg.length;
+  const tier = tierForScore(composite);
+
+  document.getElementById('score-num').innerHTML = `${composite.toFixed(2)}<small>/4.00</small>`;
+  document.getElementById('score-num').style.color = tier.color;
+  const sb = document.getElementById('score-badge');
+  sb.textContent = tier.name;
+  sb.style.color = tier.color;
+  sb.style.background = tier.color + '22';
+  sb.style.borderColor = tier.color + '55';
+  document.getElementById('score-card').style.borderColor = tier.color + '55';
+  document.getElementById('score-tier-desc').textContent = tier.desc;
+
+  document.getElementById('bar-sub').textContent = `Mean score (1–4) across ${n} respondent${n !== 1 ? 's' : ''} for each of the eight AI success parameters`;
+  document.getElementById('pie-sub').textContent = `Composite readiness tier across ${n} respondent${n !== 1 ? 's' : ''}`;
+
+  const grid = document.getElementById('metric-grid');
+  grid.innerHTML = paramAgg.map((p, i) => {
+    const t = tierForScore(p.avg);
+    const rounded = Math.max(1, Math.min(4, Math.round(p.avg)));
+    const diag = PARAM_DIAGNOSTICS[p.id][rounded];
+    const pct = (p.avg / 4) * 100;
+    return `<div class="metric-card">
+      <div class="metric-num">PARAMETER ${String(i+1).padStart(2,'0')}</div>
+      <div class="metric-title">${p.title}</div>
+      <div class="metric-score-row">
+        <div class="metric-pct" style="color:${t.color}">${p.avg.toFixed(2)}</div>
+        <div class="metric-tier">${t.name}</div>
+      </div>
+      <div class="metric-bar"><div class="metric-fill" style="width:${pct}%;background:${t.color}"></div></div>
+      <div class="metric-diag">${diag}</div>
+    </div>`;
+  }).join('');
+
+  const barCtx = document.getElementById('bar-chart').getContext('2d');
+  if (barChart) barChart.destroy();
+  barChart = new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels: paramAgg.map(p => p.title),
+      datasets: [{
+        label: 'Mean Score (1–4)',
+        data: paramAgg.map(p => Number(p.avg.toFixed(2))),
+        backgroundColor: paramAgg.map(p => tierForScore(p.avg).color),
+        borderRadius: 6
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` Score: ${ctx.parsed.x.toFixed(2)} / 4.00` } }
+      },
+      scales: {
+        x: { min: 0, max: 4, ticks: { color: '#64748b', stepSize: 1 }, grid: { color: '#334155' } },
+        y: { ticks: { color: '#94a3b8', font: { size: 11 } }, grid: { display: false } }
+      }
+    }
+  });
+
+  const tierCounts = { Foundational: 0, Emerging: 0, Advancing: 0, Leading: 0 };
+  subs.forEach(s => { if (tierCounts[s.tier] !== undefined) tierCounts[s.tier]++; });
+
+  const pieCtx = document.getElementById('pie-chart').getContext('2d');
+  if (pieChart) pieChart.destroy();
+  pieChart = new Chart(pieCtx, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(tierCounts),
+      datasets: [{
+        data: Object.values(tierCounts),
+        backgroundColor: [TIERS.foundational.color, TIERS.emerging.color, TIERS.advancing.color, TIERS.leading.color],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#94a3b8', font: { size: 13 } } },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} respondent${ctx.parsed !== 1 ? 's' : ''}` } }
+      }
+    }
+  });
+
+  const tbody = document.getElementById('responses-tbody');
+  tbody.innerHTML = subs.map((s, i) => {
+    const t = tierForScore(s.overall);
+    return `<tr>
+      <td>${i + 1}</td>
+      <td>${escapeHtml(s.role) || '—'}</td>
+      <td>${escapeHtml(s.sector) || '—'}</td>
+      <td>${escapeHtml(s.size) || '—'}</td>
+      <td class="r-score">${s.overall.toFixed(2)}</td>
+      <td style="color:${t.color}">${s.tier}</td>
+      <td>
+        <button class="r-action-btn" onclick="downloadIndividualDocx('${s.id}')">⬇ Word</button>
+        <button class="r-action-btn" onclick="downloadIndividualPdf('${s.id}')" style="margin-left:6px;">⬇ PDF</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Record what we just rendered so the polling loop can detect "no change"
+  // and skip a redundant chart rebuild.
+  lastResultsSignature = getResultsSignature();
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+/* ============================================================
+   QR
+   ============================================================ */
+function toggleQR(which) {
+  const box = document.getElementById(`qr-box-${which}`);
+  const el = document.getElementById(`qr-${which}`);
+  const urlEl = document.getElementById(`qr-url-${which}`);
+  // QR is hardcoded to the public GitHub Pages URL so attendees scanning
+  // from the back of the room land on the canonical page — not whatever
+  // localhost/preview URL the presenter happens to be running.
+  const url = isGithubPagesConfigured() ? GITHUB_PAGES_URL : window.location.href;
+  if (box.style.display === 'none' || !box.style.display) {
+    box.style.display = 'block';
+    const done = which === 'welcome' ? qrWelcomeDone : qrResultsDone;
+    if (!done) {
+      urlEl.textContent = url;
+      el.innerHTML = '';
+      new QRCode(el, { text: url, width: 180, height: 180, colorDark: '#0f172a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+      if (which === 'welcome') qrWelcomeDone = true; else qrResultsDone = true;
+    }
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type || '');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => { t.className = 'toast'; }, 3500);
+}
+
+/* ============================================================
+   CLEAR / CSV
+   ============================================================ */
+function clearAllData() {
+  if (!confirm('Clear all aggregated responses on this device? This cannot be undone.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  renderResults();
+  showToast('All responses cleared', 'success');
+}
+
+function exportCSV() {
+  const subs = getAllSubmissions();
+  if (!subs.length) { showToast('No responses to export yet', 'error'); return; }
+  const headers = ['Timestamp', 'Role', 'Sector', 'Size', 'Organization', 'Composite Score', 'Tier'];
+  PARAMETERS.forEach(p => headers.push(`${p.title} — Score`, `${p.title} — Q1`, `${p.title} — Q2`));
+
+  const rows = subs.map(s => {
+    const row = [s.timestamp, s.role, s.sector, s.size, s.org, s.overall, s.tier];
+    PARAMETERS.forEach(p => {
+      const found = s.params.find(x => x.id === p.id);
+      row.push(found ? found.score : '', found ? found.a : '', found ? found.b : '');
+    });
+    return row.map(v => `"${String(v || '').replace(/"/g, '""')}"`).join(',');
+  });
+
+  const csv = [headers.map(h => `"${h}"`).join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  saveAs(blob, `BCNY_AI_Parameters_${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+/* ============================================================
+   WORD DOCS
+   ============================================================ */
+const DOCX = window.docx;
+
+const W = {
+  navy: '0F172A',
+  blue: '1A56DB',
+  blueLight: '60A5FA',
+  gray: '64748B',
+  grayLight: '94A3B8',
+  grayBg: 'F1F5F9',
+  cardBg: 'F8FAFC',
+  border: 'CBD5E1',
+  green: '059669',
+  amber: 'D97706',
+  red: 'DC2626'
+};
+
+function tierColorWord(score) {
+  if (score >= 3.25) return W.green;
+  if (score >= 2.5) return W.blue;
+  if (score >= 1.75) return W.amber;
+  return W.red;
+}
+
+function makePara(text, opts) {
+  opts = opts || {};
+  return new DOCX.Paragraph({
+    spacing: { before: opts.before || 0, after: opts.after == null ? 120 : opts.after },
+    alignment: opts.alignment,
+    children: [ new DOCX.TextRun({
+      text: text,
+      bold: opts.bold || false,
+      italics: opts.italics || false,
+      color: opts.color || '1F2937',
+      size: opts.size || 22,
+      font: 'Arial'
+    }) ]
+  });
+}
+
+function makeHeading(text, level) {
+  const sizes = { 1: 40, 2: 30, 3: 24 };
+  return new DOCX.Paragraph({
+    spacing: { before: level === 1 ? 0 : 280, after: 140 },
+    children: [ new DOCX.TextRun({
+      text: text, bold: true, size: sizes[level] || 24, color: W.navy, font: 'Arial'
+    }) ]
+  });
+}
+
+function makeEyebrow(text) {
+  return new DOCX.Paragraph({
+    spacing: { before: 0, after: 80 },
+    children: [ new DOCX.TextRun({
+      text: text.toUpperCase(),
+      bold: true, size: 16, color: W.blue,
+      characterSpacing: 40,
+      font: 'Arial'
+    }) ]
+  });
+}
+
+function makeDivider() {
+  return new DOCX.Paragraph({
+    spacing: { before: 160, after: 160 },
+    border: { bottom: { style: DOCX.BorderStyle.SINGLE, size: 6, color: W.blueLight, space: 1 } },
+    children: [ new DOCX.TextRun({ text: '' }) ]
+  });
+}
+
+function makeCell(text, opts) {
+  opts = opts || {};
+  const border = { style: DOCX.BorderStyle.SINGLE, size: 1, color: W.border };
+  return new DOCX.TableCell({
+    borders: { top: border, bottom: border, left: border, right: border },
+    width: { size: opts.width || 2340, type: DOCX.WidthType.DXA },
+    shading: opts.shading ? { fill: opts.shading, type: DOCX.ShadingType.CLEAR } : undefined,
+    margins: { top: 100, bottom: 100, left: 140, right: 140 },
+    verticalAlign: DOCX.VerticalAlign.CENTER,
+    children: [ new DOCX.Paragraph({
+      alignment: opts.alignment,
+      children: [ new DOCX.TextRun({
+        text: String(text),
+        bold: opts.bold || false,
+        color: opts.color || '1F2937',
+        size: opts.size || 20,
+        font: 'Arial'
+      })]
+    })]
+  });
+}
+
+function makeScoreBar(score) {
+  const totalWidth = 9360;
+  const filled = Math.max(0, Math.min(1, score / 4));
+  const filledWidth = Math.max(1, Math.round(totalWidth * filled));
+  const unfilledWidth = totalWidth - filledWidth;
+  const color = tierColorWord(score);
+
+  const noBorder = { style: DOCX.BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  const borders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
+
+  const cells = [];
+  const widths = [];
+  cells.push(new DOCX.TableCell({
+    borders,
+    width: { size: filledWidth, type: DOCX.WidthType.DXA },
+    shading: { fill: color, type: DOCX.ShadingType.CLEAR },
+    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    children: [ new DOCX.Paragraph({ children: [ new DOCX.TextRun({ text: '', size: 10 }) ] }) ]
+  }));
+  widths.push(filledWidth);
+
+  if (unfilledWidth > 0) {
+    cells.push(new DOCX.TableCell({
+      borders,
+      width: { size: unfilledWidth, type: DOCX.WidthType.DXA },
+      shading: { fill: 'E5E7EB', type: DOCX.ShadingType.CLEAR },
+      margins: { top: 0, bottom: 0, left: 0, right: 0 },
+      children: [ new DOCX.Paragraph({ children: [ new DOCX.TextRun({ text: '', size: 10 }) ] }) ]
+    }));
+    widths.push(unfilledWidth);
+  }
+
+  return new DOCX.Table({
+    width: { size: totalWidth, type: DOCX.WidthType.DXA },
+    columnWidths: widths,
+    rows: [ new DOCX.TableRow({ height: { value: 180, rule: DOCX.HeightRule.EXACT }, children: cells }) ]
+  });
+}
+
+function makeHeaderBanner(titleLine, subLine) {
+  const noBorder = { style: DOCX.BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  const cell = new DOCX.TableCell({
+    borders: { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder },
+    width: { size: 9360, type: DOCX.WidthType.DXA },
+    shading: { fill: W.navy, type: DOCX.ShadingType.CLEAR },
+    margins: { top: 280, bottom: 280, left: 280, right: 280 },
+    children: [
+      new DOCX.Paragraph({
+        spacing: { after: 80 },
+        children: [ new DOCX.TextRun({ text: 'BUSINESS COUNCIL OF NEW YORK', bold: true, color: W.blueLight, size: 16, characterSpacing: 40, font: 'Arial' }) ]
+      }),
+      new DOCX.Paragraph({
+        spacing: { after: 60 },
+        children: [ new DOCX.TextRun({ text: titleLine, bold: true, color: 'FFFFFF', size: 40, font: 'Arial' }) ]
+      }),
+      new DOCX.Paragraph({
+        children: [ new DOCX.TextRun({ text: subLine, color: W.blueLight, size: 22, font: 'Arial' }) ]
+      })
+    ]
+  });
+  return new DOCX.Table({
+    width: { size: 9360, type: DOCX.WidthType.DXA },
+    columnWidths: [9360],
+    rows: [ new DOCX.TableRow({ children: [cell] }) ]
+  });
+}
+
+function makeScoreHero(score, tierName, tierColor) {
+  const noBorder = { style: DOCX.BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+  const scoreCell = new DOCX.TableCell({
+    borders: { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder },
+    width: { size: 3120, type: DOCX.WidthType.DXA },
+    shading: { fill: W.cardBg, type: DOCX.ShadingType.CLEAR },
+    margins: { top: 280, bottom: 280, left: 200, right: 200 },
+    verticalAlign: DOCX.VerticalAlign.CENTER,
+    children: [
+      new DOCX.Paragraph({
+        alignment: DOCX.AlignmentType.CENTER,
+        spacing: { after: 40 },
+        children: [ new DOCX.TextRun({ text: 'COMPOSITE SCORE', bold: true, color: W.gray, size: 14, characterSpacing: 30, font: 'Arial' }) ]
+      }),
+      new DOCX.Paragraph({
+        alignment: DOCX.AlignmentType.CENTER,
+        spacing: { after: 40 },
+        children: [ new DOCX.TextRun({ text: score.toFixed(2), bold: true, color: tierColor, size: 80, font: 'Arial' }) ]
+      }),
+      new DOCX.Paragraph({
+        alignment: DOCX.AlignmentType.CENTER,
+        children: [ new DOCX.TextRun({ text: 'of 4.00', color: W.gray, size: 18, font: 'Arial' }) ]
+      })
+    ]
+  });
+  const tierCell = new DOCX.TableCell({
+    borders: { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder },
+    width: { size: 6240, type: DOCX.WidthType.DXA },
+    shading: { fill: W.cardBg, type: DOCX.ShadingType.CLEAR },
+    margins: { top: 280, bottom: 280, left: 280, right: 280 },
+    verticalAlign: DOCX.VerticalAlign.CENTER,
+    children: [
+      new DOCX.Paragraph({
+        spacing: { after: 60 },
+        children: [ new DOCX.TextRun({ text: 'READINESS TIER', bold: true, color: W.gray, size: 14, characterSpacing: 30, font: 'Arial' }) ]
+      }),
+      new DOCX.Paragraph({
+        spacing: { after: 120 },
+        children: [ new DOCX.TextRun({ text: tierName, bold: true, color: tierColor, size: 40, font: 'Arial' }) ]
+      })
+    ]
+  });
+  return new DOCX.Table({
+    width: { size: 9360, type: DOCX.WidthType.DXA },
+    columnWidths: [3120, 6240],
+    rows: [ new DOCX.TableRow({ children: [scoreCell, tierCell] }) ]
+  });
+}
+
+function buildIndividualReport(record) {
+  const children = [];
+  const tier = tierForScore(record.overall);
+  const tierColor = tierColorWord(record.overall);
+
+  children.push(makeHeaderBanner('AI Readiness Diagnostic', 'Individual Respondent Report'));
+  children.push(makePara('', { after: 200 }));
+
+  const dateStr = new Date(record.timestamp).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
+  children.push(makeEyebrow('Respondent Snapshot'));
+
+  const metaRows = [
+    ['Role', record.role || 'Not provided'],
+    ['Sector', record.sector || 'Not provided'],
+    ['Organization Size', record.size || 'Not provided'],
+    ['Organization', record.org || 'Not provided'],
+    ['Submitted', dateStr]
+  ];
+  const metaTable = new DOCX.Table({
+    width: { size: 9360, type: DOCX.WidthType.DXA },
+    columnWidths: [2340, 7020],
+    rows: metaRows.map(r => new DOCX.TableRow({
+      children: [
+        makeCell(r[0], { width: 2340, bold: true, color: W.gray, size: 18, shading: W.grayBg }),
+        makeCell(r[1], { width: 7020, size: 20 })
+      ]
+    }))
+  });
+  children.push(metaTable);
+  children.push(makePara('', { after: 240 }));
+
+  children.push(makeEyebrow('Your Composite Readiness'));
+  children.push(makeScoreHero(record.overall, tier.name, tierColor));
+  children.push(makePara('', { after: 140 }));
+  children.push(makePara(tier.desc, { size: 22, color: '374151', after: 240 }));
+
+  children.push(makeDivider());
+
+  children.push(makeHeading('Parameter-by-Parameter Diagnostic', 2));
+  children.push(makePara('Each parameter is scored on a 1–4 scale based on your two responses. The diagnostic note reflects your reported level.', { color: W.gray, italics: true, after: 200 }));
+
+  PARAMETERS.forEach((p, i) => {
+    const ps = record.params.find(x => x.id === p.id);
+    const pTier = tierForScore(ps.score);
+    const pColor = tierColorWord(ps.score);
+    const rounded = Math.max(1, Math.min(4, Math.round(ps.score)));
+    const diag = PARAM_DIAGNOSTICS[p.id][rounded];
+
+    children.push(new DOCX.Paragraph({
+      spacing: { before: 320, after: 60 },
+      children: [
+        new DOCX.TextRun({ text: 'PARAMETER ' + String(i+1).padStart(2,'0') + ' · ', bold: true, color: W.blue, size: 16, characterSpacing: 30, font: 'Arial' }),
+        new DOCX.TextRun({ text: pTier.name.toUpperCase(), bold: true, color: pColor, size: 16, characterSpacing: 30, font: 'Arial' })
+      ]
+    }));
+    children.push(new DOCX.Paragraph({
+      spacing: { after: 140 },
+      children: [
+        new DOCX.TextRun({ text: p.title, bold: true, color: W.navy, size: 30, font: 'Arial' }),
+        new DOCX.TextRun({ text: '    ' + ps.score.toFixed(2) + ' / 4.00', color: pColor, bold: true, size: 24, font: 'Arial' })
+      ]
+    }));
+
+    children.push(makeScoreBar(ps.score));
+    children.push(makePara('', { after: 140 }));
+
+    children.push(makePara('Definition', { bold: true, color: W.blue, size: 18, after: 60 }));
+    children.push(makePara(p.definition, { color: '374151', size: 21, after: 160 }));
+
+    children.push(makePara('Your Responses', { bold: true, color: W.blue, size: 18, after: 60 }));
+    p.questions.forEach((q, qi) => {
+      const val = ps[qi === 0 ? 'a' : 'b'];
+      const opt = q.options.find(o => o.value === val);
+      children.push(new DOCX.Paragraph({
+        spacing: { after: 80 },
+        indent: { left: 200 },
+        children: [
+          new DOCX.TextRun({ text: 'Q' + (qi+1) + '. ', bold: true, color: W.gray, size: 20, font: 'Arial' }),
+          new DOCX.TextRun({ text: q.q, color: '374151', size: 20, font: 'Arial' })
+        ]
+      }));
+      children.push(new DOCX.Paragraph({
+        spacing: { after: 120 },
+        indent: { left: 500 },
+        children: [
+          new DOCX.TextRun({ text: 'Level ' + val + ': ', bold: true, color: pColor, size: 20, font: 'Arial' }),
+          new DOCX.TextRun({ text: opt ? opt.label : '—', color: '1F2937', size: 20, font: 'Arial' })
+        ]
+      }));
+    });
+
+    children.push(makePara('Diagnostic', { bold: true, color: W.blue, size: 18, after: 60 }));
+    children.push(makePara(diag, { color: '1F2937', size: 21, after: 120 }));
+  });
+
+  children.push(makeDivider());
+  children.push(makePara('About this diagnostic', { bold: true, color: W.navy, size: 22, before: 160, after: 80 }));
+  children.push(makePara('This instrument measures organizational readiness across the eight parameters that drive AI success: Culture & Strategy, Workforce Availability, Workforce Re-engineering & Innovation, Risk & Governance, Data for AI, AI Engineering, AI Ecosystem, and Operations & Sustainment. Scores are advisory and intended to inform executive dialogue and prioritization at the Business Council of New York board meeting.', { color: W.gray, size: 18, after: 80 }));
+  children.push(makePara('Responses are aggregated anonymously to inform Council programming. Identifying fields appear only on this individual report.', { color: W.gray, italics: true, size: 18 }));
+
+  return children;
+}
+
+function buildAggregateReport(subs) {
+  const children = [];
+  const n = subs.length;
+
+  const paramAgg = PARAMETERS.map(p => {
+    const scores = subs.map(s => (s.params.find(x => x.id === p.id) || {}).score).filter(x => x != null);
+    const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+    const qa = subs.map(s => (s.params.find(x => x.id === p.id) || {}).a).filter(x => x != null);
+    const qb = subs.map(s => (s.params.find(x => x.id === p.id) || {}).b).filter(x => x != null);
+    const avgA = qa.length ? qa.reduce((a, b) => a + b, 0) / qa.length : 0;
+    const avgB = qb.length ? qb.reduce((a, b) => a + b, 0) / qb.length : 0;
+    return { id: p.id, title: p.title, avg, avgA, avgB };
+  });
+  const composite = paramAgg.reduce((s, p) => s + p.avg, 0) / paramAgg.length;
+  const tier = tierForScore(composite);
+  const tierColor = tierColorWord(composite);
+
+  const tierCounts = { Foundational: 0, Emerging: 0, Advancing: 0, Leading: 0 };
+  subs.forEach(s => { if (tierCounts[s.tier] !== undefined) tierCounts[s.tier]++; });
+
+  children.push(makeHeaderBanner('AI Readiness Diagnostic', 'Aggregate Board Report'));
+  children.push(makePara('', { after: 200 }));
+
+  const dateStr = new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
+  children.push(makeEyebrow('Board Convening Snapshot'));
+  const metaTable = new DOCX.Table({
+    width: { size: 9360, type: DOCX.WidthType.DXA },
+    columnWidths: [2340, 7020],
+    rows: [
+      new DOCX.TableRow({ children: [ makeCell('Report Generated', { width: 2340, bold: true, color: W.gray, size: 18, shading: W.grayBg }), makeCell(dateStr, { width: 7020, size: 20 }) ] }),
+      new DOCX.TableRow({ children: [ makeCell('Total Respondents', { width: 2340, bold: true, color: W.gray, size: 18, shading: W.grayBg }), makeCell(String(n), { width: 7020, size: 20 }) ] }),
+      new DOCX.TableRow({ children: [ makeCell('Parameters Assessed', { width: 2340, bold: true, color: W.gray, size: 18, shading: W.grayBg }), makeCell('Eight AI Success Parameters', { width: 7020, size: 20 }) ] }),
+      new DOCX.TableRow({ children: [ makeCell('Questions per Respondent', { width: 2340, bold: true, color: W.gray, size: 18, shading: W.grayBg }), makeCell('16 (2 per parameter)', { width: 7020, size: 20 }) ] })
+    ]
+  });
+  children.push(metaTable);
+  children.push(makePara('', { after: 240 }));
+
+  children.push(makeEyebrow('Aggregate Readiness'));
+  children.push(makeScoreHero(composite, tier.name, tierColor));
+  children.push(makePara('', { after: 140 }));
+  children.push(makePara(tier.desc, { size: 22, color: '374151', after: 240 }));
+
+  children.push(makeDivider());
+
+  children.push(makeHeading('Parameter Averages', 2));
+  children.push(makePara('Mean scores across all respondents for each AI success parameter.', { color: W.gray, italics: true, after: 160 }));
+
+  const headerRow = new DOCX.TableRow({
+    tableHeader: true,
+    children: [
+      makeCell('#', { width: 600, bold: true, color: 'FFFFFF', shading: W.navy, size: 18, alignment: DOCX.AlignmentType.CENTER }),
+      makeCell('Parameter', { width: 3960, bold: true, color: 'FFFFFF', shading: W.navy, size: 18 }),
+      makeCell('Mean Score', { width: 1600, bold: true, color: 'FFFFFF', shading: W.navy, size: 18, alignment: DOCX.AlignmentType.CENTER }),
+      makeCell('Tier', { width: 1800, bold: true, color: 'FFFFFF', shading: W.navy, size: 18, alignment: DOCX.AlignmentType.CENTER }),
+      makeCell('Q1 Avg', { width: 700, bold: true, color: 'FFFFFF', shading: W.navy, size: 18, alignment: DOCX.AlignmentType.CENTER }),
+      makeCell('Q2 Avg', { width: 700, bold: true, color: 'FFFFFF', shading: W.navy, size: 18, alignment: DOCX.AlignmentType.CENTER })
+    ]
+  });
+
+  const dataRows = paramAgg.map((p, i) => {
+    const t = tierForScore(p.avg);
+    const c = tierColorWord(p.avg);
+    const rowShade = i % 2 === 0 ? W.cardBg : undefined;
+    return new DOCX.TableRow({
+      children: [
+        makeCell(String(i+1), { width: 600, shading: rowShade, size: 20, alignment: DOCX.AlignmentType.CENTER, color: W.gray }),
+        makeCell(p.title, { width: 3960, shading: rowShade, size: 20, bold: true }),
+        makeCell(p.avg.toFixed(2), { width: 1600, shading: rowShade, size: 22, bold: true, color: c, alignment: DOCX.AlignmentType.CENTER }),
+        makeCell(t.name, { width: 1800, shading: rowShade, size: 18, color: c, alignment: DOCX.AlignmentType.CENTER, bold: true }),
+        makeCell(p.avgA.toFixed(2), { width: 700, shading: rowShade, size: 18, alignment: DOCX.AlignmentType.CENTER, color: W.gray }),
+        makeCell(p.avgB.toFixed(2), { width: 700, shading: rowShade, size: 18, alignment: DOCX.AlignmentType.CENTER, color: W.gray })
+      ]
+    });
+  });
+
+  children.push(new DOCX.Table({
+    width: { size: 9360, type: DOCX.WidthType.DXA },
+    columnWidths: [600, 3960, 1600, 1800, 700, 700],
+    rows: [headerRow].concat(dataRows)
+  }));
+  children.push(makePara('', { after: 240 }));
+
+  children.push(makeHeading('Tier Distribution', 2));
+  const distHeader = new DOCX.TableRow({
+    tableHeader: true,
+    children: [
+      makeCell('Tier', { width: 3120, bold: true, color: 'FFFFFF', shading: W.navy, size: 18 }),
+      makeCell('Respondents', { width: 3120, bold: true, color: 'FFFFFF', shading: W.navy, size: 18, alignment: DOCX.AlignmentType.CENTER }),
+      makeCell('Share', { width: 3120, bold: true, color: 'FFFFFF', shading: W.navy, size: 18, alignment: DOCX.AlignmentType.CENTER })
+    ]
+  });
+  const tierColorMap = {
+    Foundational: W.red,
+    Emerging: W.amber,
+    Advancing: W.blue,
+    Leading: W.green
+  };
+  const distRows = Object.entries(tierCounts).map((entry, i) => {
+    const name = entry[0], count = entry[1];
+    const rowShade = i % 2 === 0 ? W.cardBg : undefined;
+    const c = tierColorMap[name] || W.gray;
+    const pct = n ? Math.round((count / n) * 100) : 0;
+    return new DOCX.TableRow({ children: [
+      makeCell(name, { width: 3120, shading: rowShade, size: 20, bold: true, color: c }),
+      makeCell(String(count), { width: 3120, shading: rowShade, size: 20, alignment: DOCX.AlignmentType.CENTER }),
+      makeCell(pct + '%', { width: 3120, shading: rowShade, size: 20, alignment: DOCX.AlignmentType.CENTER, color: W.gray })
+    ]});
+  });
+  children.push(new DOCX.Table({
+    width: { size: 9360, type: DOCX.WidthType.DXA },
+    columnWidths: [3120, 3120, 3120],
+    rows: [distHeader].concat(distRows)
+  }));
+  children.push(makePara('', { after: 240 }));
+
+  children.push(makeDivider());
+
+  children.push(makeHeading('Parameter-Level Commentary', 2));
+  children.push(makePara('Each note reflects the aggregate response level of the room — a starting point for board discussion, not a prescription.', { color: W.gray, italics: true, after: 200 }));
+
+  PARAMETERS.forEach((p, i) => {
+    const pa = paramAgg[i];
+    const pTier = tierForScore(pa.avg);
+    const pColor = tierColorWord(pa.avg);
+    const rounded = Math.max(1, Math.min(4, Math.round(pa.avg)));
+    const diag = PARAM_DIAGNOSTICS[p.id][rounded];
+
+    children.push(new DOCX.Paragraph({
+      spacing: { before: 320, after: 60 },
+      children: [
+        new DOCX.TextRun({ text: 'PARAMETER ' + String(i+1).padStart(2,'0') + ' · ', bold: true, color: W.blue, size: 16, characterSpacing: 30, font: 'Arial' }),
+        new DOCX.TextRun({ text: pTier.name.toUpperCase(), bold: true, color: pColor, size: 16, characterSpacing: 30, font: 'Arial' })
+      ]
+    }));
+    children.push(new DOCX.Paragraph({
+      spacing: { after: 140 },
+      children: [
+        new DOCX.TextRun({ text: p.title, bold: true, color: W.navy, size: 30, font: 'Arial' }),
+        new DOCX.TextRun({ text: '    ' + pa.avg.toFixed(2) + ' / 4.00', color: pColor, bold: true, size: 24, font: 'Arial' })
+      ]
+    }));
+    children.push(makeScoreBar(pa.avg));
+    children.push(makePara('', { after: 140 }));
+    children.push(makePara('Definition', { bold: true, color: W.blue, size: 18, after: 60 }));
+    children.push(makePara(p.definition, { color: '374151', size: 21, after: 160 }));
+    children.push(makePara('Aggregate Diagnostic', { bold: true, color: W.blue, size: 18, after: 60 }));
+    children.push(makePara(diag, { color: '1F2937', size: 21, after: 120 }));
+  });
+
+  children.push(makeDivider());
+
+  children.push(makeHeading('Respondent Roster (Anonymized)', 2));
+  children.push(makePara('Summary of individual responses. Identifying fields are shown only where respondents provided them.', { color: W.gray, italics: true, after: 160 }));
+
+  const rosterHeader = new DOCX.TableRow({
+    tableHeader: true,
+    children: [
+      makeCell('#', { width: 600, bold: true, color: 'FFFFFF', shading: W.navy, size: 18, alignment: DOCX.AlignmentType.CENTER }),
+      makeCell('Role', { width: 2340, bold: true, color: 'FFFFFF', shading: W.navy, size: 18 }),
+      makeCell('Sector', { width: 2340, bold: true, color: 'FFFFFF', shading: W.navy, size: 18 }),
+      makeCell('Size', { width: 2160, bold: true, color: 'FFFFFF', shading: W.navy, size: 18 }),
+      makeCell('Score', { width: 900, bold: true, color: 'FFFFFF', shading: W.navy, size: 18, alignment: DOCX.AlignmentType.CENTER }),
+      makeCell('Tier', { width: 1020, bold: true, color: 'FFFFFF', shading: W.navy, size: 18, alignment: DOCX.AlignmentType.CENTER })
+    ]
+  });
+  const rosterRows = subs.map((s, i) => {
+    const rowShade = i % 2 === 0 ? W.cardBg : undefined;
+    const c = tierColorWord(s.overall);
+    return new DOCX.TableRow({ children: [
+      makeCell(String(i+1), { width: 600, shading: rowShade, size: 18, alignment: DOCX.AlignmentType.CENTER, color: W.gray }),
+      makeCell(s.role || '—', { width: 2340, shading: rowShade, size: 18 }),
+      makeCell(s.sector || '—', { width: 2340, shading: rowShade, size: 18 }),
+      makeCell(s.size || '—', { width: 2160, shading: rowShade, size: 18 }),
+      makeCell(s.overall.toFixed(2), { width: 900, shading: rowShade, size: 18, bold: true, color: c, alignment: DOCX.AlignmentType.CENTER }),
+      makeCell(s.tier, { width: 1020, shading: rowShade, size: 18, color: c, alignment: DOCX.AlignmentType.CENTER, bold: true })
+    ]});
+  });
+  children.push(new DOCX.Table({
+    width: { size: 9360, type: DOCX.WidthType.DXA },
+    columnWidths: [600, 2340, 2340, 2160, 900, 1020],
+    rows: [rosterHeader].concat(rosterRows)
+  }));
+  children.push(makePara('', { after: 240 }));
+
+  children.push(makeDivider());
+  children.push(makePara('About this diagnostic', { bold: true, color: W.navy, size: 22, before: 160, after: 80 }));
+  children.push(makePara('This report aggregates responses from executives attending the Business Council of New York board meeting. The diagnostic covers the eight parameters that drive AI success: Culture & Strategy, Workforce Availability, Workforce Re-engineering & Innovation, Risk & Governance, Data for AI, AI Engineering, AI Ecosystem, and Operations & Sustainment.', { color: W.gray, size: 18, after: 80 }));
+  children.push(makePara("Responses are advisory and intended to inform executive dialogue and the Council's programming priorities.", { color: W.gray, italics: true, size: 18 }));
+
+  return children;
+}
+
+function buildDoc(children) {
+  return new DOCX.Document({
+    creator: 'Business Council of New York',
+    title: 'AI Readiness Diagnostic',
+    styles: {
+      default: { document: { run: { font: 'Arial', size: 22 } } }
+    },
+    sections: [{
+      properties: {
+        page: {
+          size: { width: 12240, height: 15840 },
+          margin: { top: 1080, right: 1080, bottom: 1080, left: 1080 }
+        }
+      },
+      children: children
+    }]
+  });
+}
+
+async function downloadIndividualDocx(recordId) {
+  const subs = getAllSubmissions();
+  const record = subs.find(s => s.id === recordId);
+  if (!record) { showToast('Response not found', 'error'); return; }
+  try {
+    const children = buildIndividualReport(record);
+    const doc = buildDoc(children);
+    const blob = await DOCX.Packer.toBlob(doc);
+    const roleSlug = (record.role || 'respondent').replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 24) || 'respondent';
+    const date = new Date(record.timestamp).toISOString().slice(0, 10);
+    saveAs(blob, 'BCNY_AI_Readiness_' + roleSlug + '_' + date + '.docx');
+    showToast('Individual Word report downloaded', 'success');
+  } catch (e) {
+    console.error(e);
+    showToast('Could not generate report: ' + e.message, 'error');
+  }
+}
+
+async function downloadAggregateDocx() {
+  const subs = getAllSubmissions();
+  if (!subs.length) { showToast('No responses to aggregate yet', 'error'); return; }
+  try {
+    const children = buildAggregateReport(subs);
+    const doc = buildDoc(children);
+    const blob = await DOCX.Packer.toBlob(doc);
+    saveAs(blob, 'BCNY_AI_Readiness_Aggregate_' + new Date().toISOString().slice(0, 10) + '.docx');
+    showToast('Aggregate Word report downloaded', 'success');
+  } catch (e) {
+    console.error(e);
+    showToast('Could not generate aggregate report: ' + e.message, 'error');
+  }
+}
+
+/* ============================================================
+   PDF REPORTS (jsPDF + autoTable, client-side)
+   ============================================================ */
+const PDF_COLORS = {
+  navy: [15, 23, 42],
+  blue: [26, 86, 219],
+  blueLight: [96, 165, 250],
+  accenturePurple: [161, 0, 255],
+  gray: [100, 116, 139],
+  grayLight: [148, 163, 184],
+  text: [31, 41, 55],
+  green: [5, 150, 105],
+  amber: [217, 119, 6],
+  red: [220, 38, 38]
+};
+
+function pdfTierColor(score) {
+  if (score >= 3.25) return PDF_COLORS.green;
+  if (score >= 2.5) return PDF_COLORS.blue;
+  if (score >= 1.75) return PDF_COLORS.amber;
+  return PDF_COLORS.red;
+}
+
+function pdfHeaderBanner(doc, title, subtitle) {
+  const w = doc.internal.pageSize.getWidth();
+  // Navy banner
+  doc.setFillColor.apply(doc, PDF_COLORS.navy);
+  doc.rect(0, 0, w, 80, 'F');
+  // Eyebrow
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor.apply(doc, PDF_COLORS.blueLight);
+  doc.text('BUSINESS COUNCIL OF NEW YORK', 36, 26);
+  // Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.setTextColor(255, 255, 255);
+  doc.text(title, 36, 50);
+  // Subtitle
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor.apply(doc, PDF_COLORS.blueLight);
+  doc.text(subtitle, 36, 68);
+  // Accenture cobrand on the right
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor.apply(doc, PDF_COLORS.grayLight);
+  doc.text('PRESENTED BY', w - 36, 30, { align: 'right' });
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor.apply(doc, PDF_COLORS.accenturePurple);
+  const markWidth = doc.getTextWidth('>');
+  doc.text('>', w - 36 - 78, 52);
+  doc.setTextColor(255, 255, 255);
+  doc.text('accenture', w - 36, 52, { align: 'right' });
+}
+
+function pdfScoreHero(doc, y, score, tierName) {
+  const w = doc.internal.pageSize.getWidth();
+  const color = pdfTierColor(score);
+  // Light card
+  doc.setFillColor(248, 250, 252);
+  doc.rect(36, y, w - 72, 90, 'F');
+  // Composite label
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor.apply(doc, PDF_COLORS.gray);
+  doc.text('COMPOSITE SCORE', 56, y + 22);
+  // Score number
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(38);
+  doc.setTextColor.apply(doc, color);
+  doc.text(score.toFixed(2), 56, y + 60);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.setTextColor.apply(doc, PDF_COLORS.gray);
+  doc.text('of 4.00', 56, y + 78);
+  // Tier on right
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor.apply(doc, PDF_COLORS.gray);
+  doc.text('READINESS TIER', w - 56, y + 22, { align: 'right' });
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
+  doc.setTextColor.apply(doc, color);
+  doc.text(tierName, w - 56, y + 60, { align: 'right' });
+  return y + 90;
+}
+
+function pdfScoreBar(doc, y, score) {
+  const w = doc.internal.pageSize.getWidth();
+  const totalW = w - 72;
+  const filledW = Math.max(2, Math.round(totalW * (score / 4)));
+  const color = pdfTierColor(score);
+  // Track
+  doc.setFillColor(229, 231, 235);
+  doc.rect(36, y, totalW, 6, 'F');
+  // Fill
+  doc.setFillColor.apply(doc, color);
+  doc.rect(36, y, filledW, 6, 'F');
+  return y + 6;
+}
+
+function pdfWrappedText(doc, text, x, y, maxWidth, lineHeight) {
+  const lines = doc.splitTextToSize(text, maxWidth);
+  doc.text(lines, x, y);
+  return y + lines.length * lineHeight;
+}
+
+function pdfEnsureRoom(doc, y, neededHeight) {
+  const pageH = doc.internal.pageSize.getHeight();
+  if (y + neededHeight > pageH - 48) {
+    doc.addPage();
+    return 48;
+  }
+  return y;
+}
+
+function buildIndividualPdf(record) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  const w = doc.internal.pageSize.getWidth();
+  const tier = tierForScore(record.overall);
+
+  pdfHeaderBanner(doc, 'AI Readiness Diagnostic', 'Individual Respondent Report');
+  let y = 110;
+
+  // Respondent metadata table
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor.apply(doc, PDF_COLORS.blue);
+  doc.text('RESPONDENT SNAPSHOT', 36, y);
+  y += 12;
+
+  const dateStr = new Date(record.timestamp).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' });
+  doc.autoTable({
+    startY: y,
+    margin: { left: 36, right: 36 },
+    head: [],
+    body: [
+      ['Role', record.role || 'Not provided'],
+      ['Sector', record.sector || 'Not provided'],
+      ['Organization Size', record.size || 'Not provided'],
+      ['Organization', record.org || 'Not provided'],
+      ['Submitted', dateStr]
+    ],
+    styles: { font: 'helvetica', fontSize: 10, cellPadding: 6, textColor: PDF_COLORS.text },
+    columnStyles: {
+      0: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: PDF_COLORS.gray, cellWidth: 130 },
+      1: { textColor: PDF_COLORS.text }
+    },
+    theme: 'grid'
+  });
+  y = doc.lastAutoTable.finalY + 24;
+
+  // Score hero
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor.apply(doc, PDF_COLORS.blue);
+  doc.text('YOUR COMPOSITE READINESS', 36, y);
+  y += 12;
+  y = pdfScoreHero(doc, y, record.overall, tier.name);
+  y += 18;
+
+  // Tier description
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor.apply(doc, PDF_COLORS.text);
+  y = pdfWrappedText(doc, tier.desc, 36, y, w - 72, 13) + 24;
+
+  // Per-parameter sections
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor.apply(doc, PDF_COLORS.navy);
+  y = pdfEnsureRoom(doc, y, 30);
+  doc.text('Parameter-by-Parameter Diagnostic', 36, y);
+  y += 18;
+
+  PARAMETERS.forEach((p, i) => {
+    const ps = record.params.find(x => x.id === p.id);
+    if (!ps) return;
+    const pTier = tierForScore(ps.score);
+    const pColor = pdfTierColor(ps.score);
+    const rounded = Math.max(1, Math.min(4, Math.round(ps.score)));
+    const diag = PARAM_DIAGNOSTICS[p.id][rounded];
+
+    y = pdfEnsureRoom(doc, y, 160);
+
+    // Eyebrow
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor.apply(doc, PDF_COLORS.blue);
+    doc.text('PARAMETER ' + String(i + 1).padStart(2, '0') + ' · ', 36, y);
+    doc.setTextColor.apply(doc, pColor);
+    doc.text(pTier.name.toUpperCase(), 36 + doc.getTextWidth('PARAMETER ' + String(i + 1).padStart(2, '0') + ' · '), y);
+    y += 14;
+
+    // Title + score
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor.apply(doc, PDF_COLORS.navy);
+    doc.text(p.title, 36, y);
+    doc.setTextColor.apply(doc, pColor);
+    doc.setFontSize(12);
+    doc.text(ps.score.toFixed(2) + ' / 4.00', w - 36, y, { align: 'right' });
+    y += 8;
+
+    // Bar
+    y = pdfScoreBar(doc, y, ps.score) + 14;
+
+    // Definition
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor.apply(doc, PDF_COLORS.blue);
+    doc.text('DEFINITION', 36, y);
+    y += 11;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor.apply(doc, PDF_COLORS.text);
+    y = pdfWrappedText(doc, p.definition, 36, y, w - 72, 12) + 10;
+
+    // Responses
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor.apply(doc, PDF_COLORS.blue);
+    doc.text('YOUR RESPONSES', 36, y);
+    y += 11;
+    p.questions.forEach((q, qi) => {
+      const val = ps[qi === 0 ? 'a' : 'b'];
+      const opt = q.options.find(o => o.value === val);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor.apply(doc, PDF_COLORS.gray);
+      doc.text('Q' + (qi + 1) + '.', 46, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor.apply(doc, PDF_COLORS.text);
+      y = pdfWrappedText(doc, q.q, 64, y, w - 100, 11) + 4;
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor.apply(doc, pColor);
+      doc.text('Level ' + val + ': ', 64, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor.apply(doc, PDF_COLORS.text);
+      const labelX = 64 + doc.getTextWidth('Level ' + val + ': ');
+      y = pdfWrappedText(doc, opt ? opt.label : '—', labelX, y, w - 36 - labelX, 11) + 8;
+    });
+
+    y = pdfEnsureRoom(doc, y, 60);
+
+    // Diagnostic
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor.apply(doc, PDF_COLORS.blue);
+    doc.text('DIAGNOSTIC', 36, y);
+    y += 11;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor.apply(doc, PDF_COLORS.text);
+    y = pdfWrappedText(doc, diag, 36, y, w - 72, 12) + 22;
+  });
+
+  // Footer note
+  y = pdfEnsureRoom(doc, y, 60);
+  doc.setDrawColor.apply(doc, PDF_COLORS.blueLight);
+  doc.setLineWidth(0.5);
+  doc.line(36, y, w - 36, y);
+  y += 16;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor.apply(doc, PDF_COLORS.navy);
+  doc.text('About this diagnostic', 36, y);
+  y += 12;
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(8.5);
+  doc.setTextColor.apply(doc, PDF_COLORS.gray);
+  pdfWrappedText(doc, 'This instrument measures organizational readiness across the eight parameters that drive AI success. Scores are advisory and intended to inform executive dialogue. Responses are aggregated anonymously to inform Council programming.', 36, y, w - 72, 11);
+
+  return doc;
+}
+
+function buildAggregatePdf(subs) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  const w = doc.internal.pageSize.getWidth();
+  const n = subs.length;
+
+  const paramAgg = PARAMETERS.map(p => {
+    const scores = subs.map(s => (s.params.find(x => x.id === p.id) || {}).score).filter(x => x != null);
+    const avg = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+    const qa = subs.map(s => (s.params.find(x => x.id === p.id) || {}).a).filter(x => x != null);
+    const qb = subs.map(s => (s.params.find(x => x.id === p.id) || {}).b).filter(x => x != null);
+    const avgA = qa.length ? qa.reduce((a, b) => a + b, 0) / qa.length : 0;
+    const avgB = qb.length ? qb.reduce((a, b) => a + b, 0) / qb.length : 0;
+    return { id: p.id, title: p.title, avg, avgA, avgB };
+  });
+  const composite = paramAgg.reduce((s, p) => s + p.avg, 0) / paramAgg.length;
+  const tier = tierForScore(composite);
+  const tierCounts = { Foundational: 0, Emerging: 0, Advancing: 0, Leading: 0 };
+  subs.forEach(s => { if (tierCounts[s.tier] !== undefined) tierCounts[s.tier]++; });
+
+  pdfHeaderBanner(doc, 'AI Readiness Diagnostic', 'Aggregate Board Report');
+  let y = 110;
+
+  // Snapshot
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor.apply(doc, PDF_COLORS.blue);
+  doc.text('BOARD CONVENING SNAPSHOT', 36, y);
+  y += 12;
+  doc.autoTable({
+    startY: y,
+    margin: { left: 36, right: 36 },
+    body: [
+      ['Report Generated', new Date().toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' })],
+      ['Total Respondents', String(n)],
+      ['Parameters Assessed', 'Eight AI Success Parameters'],
+      ['Questions per Respondent', '16 (2 per parameter)']
+    ],
+    styles: { font: 'helvetica', fontSize: 10, cellPadding: 6, textColor: PDF_COLORS.text },
+    columnStyles: {
+      0: { fontStyle: 'bold', fillColor: [241, 245, 249], textColor: PDF_COLORS.gray, cellWidth: 160 }
+    },
+    theme: 'grid'
+  });
+  y = doc.lastAutoTable.finalY + 24;
+
+  // Aggregate score hero
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor.apply(doc, PDF_COLORS.blue);
+  doc.text('AGGREGATE READINESS', 36, y);
+  y += 12;
+  y = pdfScoreHero(doc, y, composite, tier.name);
+  y += 18;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor.apply(doc, PDF_COLORS.text);
+  y = pdfWrappedText(doc, tier.desc, 36, y, w - 72, 13) + 24;
+
+  // Parameter averages table
+  y = pdfEnsureRoom(doc, y, 80);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor.apply(doc, PDF_COLORS.navy);
+  doc.text('Parameter Averages', 36, y);
+  y += 16;
+
+  doc.autoTable({
+    startY: y,
+    margin: { left: 36, right: 36 },
+    head: [['#', 'Parameter', 'Mean', 'Tier', 'Q1', 'Q2']],
+    body: paramAgg.map((p, i) => {
+      const t = tierForScore(p.avg);
+      return [
+        String(i + 1),
+        p.title,
+        p.avg.toFixed(2),
+        t.name,
+        p.avgA.toFixed(2),
+        p.avgB.toFixed(2)
+      ];
+    }),
+    styles: { font: 'helvetica', fontSize: 9.5, cellPadding: 6 },
+    headStyles: { fillColor: PDF_COLORS.navy, textColor: [255, 255, 255], fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 28 },
+      1: { fontStyle: 'bold' },
+      2: { halign: 'center', fontStyle: 'bold', cellWidth: 50 },
+      3: { halign: 'center', cellWidth: 70 },
+      4: { halign: 'center', cellWidth: 40, textColor: PDF_COLORS.gray },
+      5: { halign: 'center', cellWidth: 40, textColor: PDF_COLORS.gray }
+    },
+    didParseCell: function(data) {
+      if (data.section === 'body' && (data.column.index === 2 || data.column.index === 3)) {
+        const p = paramAgg[data.row.index];
+        data.cell.styles.textColor = pdfTierColor(p.avg);
+      }
+    }
+  });
+  y = doc.lastAutoTable.finalY + 24;
+
+  // Tier distribution table
+  y = pdfEnsureRoom(doc, y, 100);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor.apply(doc, PDF_COLORS.navy);
+  doc.text('Tier Distribution', 36, y);
+  y += 16;
+
+  doc.autoTable({
+    startY: y,
+    margin: { left: 36, right: 36 },
+    head: [['Tier', 'Respondents', 'Share']],
+    body: Object.entries(tierCounts).map(([name, count]) => [
+      name,
+      String(count),
+      n ? Math.round((count / n) * 100) + '%' : '0%'
+    ]),
+    styles: { font: 'helvetica', fontSize: 10, cellPadding: 6 },
+    headStyles: { fillColor: PDF_COLORS.navy, textColor: [255, 255, 255], fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: {
+      0: { fontStyle: 'bold' },
+      1: { halign: 'center' },
+      2: { halign: 'center', textColor: PDF_COLORS.gray }
+    },
+    didParseCell: function(data) {
+      if (data.section === 'body' && data.column.index === 0) {
+        const tierName = data.cell.raw;
+        const map = {
+          Foundational: PDF_COLORS.red,
+          Emerging: PDF_COLORS.amber,
+          Advancing: PDF_COLORS.blue,
+          Leading: PDF_COLORS.green
+        };
+        if (map[tierName]) data.cell.styles.textColor = map[tierName];
+      }
+    }
+  });
+  y = doc.lastAutoTable.finalY + 28;
+
+  // Per-parameter commentary
+  doc.addPage();
+  y = 48;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor.apply(doc, PDF_COLORS.navy);
+  doc.text('Parameter-Level Commentary', 36, y);
+  y += 8;
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(9);
+  doc.setTextColor.apply(doc, PDF_COLORS.gray);
+  y = pdfWrappedText(doc, 'Each note reflects the aggregate response level of the room — a starting point for board discussion, not a prescription.', 36, y + 8, w - 72, 11) + 18;
+
+  PARAMETERS.forEach((p, i) => {
+    const pa = paramAgg[i];
+    const pTier = tierForScore(pa.avg);
+    const pColor = pdfTierColor(pa.avg);
+    const rounded = Math.max(1, Math.min(4, Math.round(pa.avg)));
+    const diag = PARAM_DIAGNOSTICS[p.id][rounded];
+
+    y = pdfEnsureRoom(doc, y, 130);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor.apply(doc, PDF_COLORS.blue);
+    doc.text('PARAMETER ' + String(i + 1).padStart(2, '0') + ' · ', 36, y);
+    doc.setTextColor.apply(doc, pColor);
+    doc.text(pTier.name.toUpperCase(), 36 + doc.getTextWidth('PARAMETER ' + String(i + 1).padStart(2, '0') + ' · '), y);
+    y += 14;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor.apply(doc, PDF_COLORS.navy);
+    doc.text(p.title, 36, y);
+    doc.setTextColor.apply(doc, pColor);
+    doc.setFontSize(11);
+    doc.text(pa.avg.toFixed(2) + ' / 4.00', w - 36, y, { align: 'right' });
+    y += 8;
+    y = pdfScoreBar(doc, y, pa.avg) + 14;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor.apply(doc, PDF_COLORS.blue);
+    doc.text('DEFINITION', 36, y);
+    y += 11;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor.apply(doc, PDF_COLORS.text);
+    y = pdfWrappedText(doc, p.definition, 36, y, w - 72, 12) + 10;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor.apply(doc, PDF_COLORS.blue);
+    doc.text('AGGREGATE DIAGNOSTIC', 36, y);
+    y += 11;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.setTextColor.apply(doc, PDF_COLORS.text);
+    y = pdfWrappedText(doc, diag, 36, y, w - 72, 12) + 22;
+  });
+
+  // Roster
+  doc.addPage();
+  y = 48;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor.apply(doc, PDF_COLORS.navy);
+  doc.text('Respondent Roster (Anonymized)', 36, y);
+  y += 18;
+  doc.autoTable({
+    startY: y,
+    margin: { left: 36, right: 36 },
+    head: [['#', 'Role', 'Sector', 'Size', 'Score', 'Tier']],
+    body: subs.map((s, i) => [
+      String(i + 1),
+      s.role || '—',
+      s.sector || '—',
+      s.size || '—',
+      s.overall.toFixed(2),
+      s.tier
+    ]),
+    styles: { font: 'helvetica', fontSize: 9, cellPadding: 5 },
+    headStyles: { fillColor: PDF_COLORS.navy, textColor: [255, 255, 255], fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 28, textColor: PDF_COLORS.gray },
+      4: { halign: 'center', fontStyle: 'bold', cellWidth: 45 },
+      5: { halign: 'center', cellWidth: 75, fontStyle: 'bold' }
+    },
+    didParseCell: function(data) {
+      if (data.section === 'body' && (data.column.index === 4 || data.column.index === 5)) {
+        const s = subs[data.row.index];
+        data.cell.styles.textColor = pdfTierColor(s.overall);
+      }
+    }
+  });
+
+  return doc;
+}
+
+function downloadIndividualPdf(recordId) {
+  const subs = getAllSubmissions();
+  const record = subs.find(s => s.id === recordId);
+  if (!record) { showToast('Response not found', 'error'); return; }
+  try {
+    const doc = buildIndividualPdf(record);
+    const roleSlug = (record.role || 'respondent').replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 24) || 'respondent';
+    const date = new Date(record.timestamp).toISOString().slice(0, 10);
+    doc.save('BCNY_AI_Readiness_' + roleSlug + '_' + date + '.pdf');
+    showToast('Individual PDF report downloaded', 'success');
+  } catch (e) {
+    console.error(e);
+    showToast('Could not generate PDF: ' + e.message, 'error');
+  }
+}
+
+function downloadAggregatePdf() {
+  const subs = getAllSubmissions();
+  if (!subs.length) { showToast('No responses to aggregate yet', 'error'); return; }
+  try {
+    const doc = buildAggregatePdf(subs);
+    doc.save('BCNY_AI_Readiness_Aggregate_' + new Date().toISOString().slice(0, 10) + '.pdf');
+    showToast('Aggregate PDF report downloaded', 'success');
+  } catch (e) {
+    console.error(e);
+    showToast('Could not generate aggregate PDF: ' + e.message, 'error');
+  }
+}
+
+renderParamPreview();
+loadSetupConfig();
+</script>
+</body>
+</html>
